@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material Design inspired styles */
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .btn-elevation {
+    @apply shadow-sm hover:shadow transition-shadow duration-200;
+  }
+}
