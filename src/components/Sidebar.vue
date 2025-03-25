@@ -2,9 +2,9 @@
   <aside
     :class="[
       'fixed left-0 top-16 h-[calc(100vh-64px)] border-r bg-white shadow-sm transition-all duration-300 ease-in-out z-30',
-      isOpen ? 'w-64' : '-translate-x-full'
+      isOpen ? 'w-64' : '-translate-x-full',
     ]"
-  >    
+  >
     <div class="flex-1 overflow-y-auto py-4">
       <nav class="flex flex-col">
         <router-link
@@ -48,7 +48,7 @@
           <component :is="BookCopy" :size="20" />
           <span class="ml-3">Kiểm tra đạo văn</span>
         </router-link>
-        
+
         <router-link
           to="/statistics"
           :class="`
@@ -59,9 +59,8 @@
           <component :is="ChartNoAxesColumnIncreasing" :size="20" />
           <span class="ml-3">Thống kê</span>
         </router-link>
-        
       </nav>
-      
+
       <div class="mt-6 pt-6 border-t mx-4">
         <div class="text-xs uppercase text-gray-500 mb-2 px-2">Utilities</div>
         <nav class="flex flex-col">
@@ -88,7 +87,7 @@
         </nav>
       </div>
     </div>
-    
+
     <div class="border-t p-4">
       <div class="text-xs text-center text-gray-500">
         <p>Design Version 1.0</p>
@@ -98,19 +97,19 @@
 </template>
 
 <script setup>
-import { 
+import {
   Home,
-  MessageSquare, 
-  FileText, 
+  MessageSquare,
+  FileText,
   ChartNoAxesColumnIncreasing,
   BookCopy,
   Settings,
-  HelpCircle
-} from 'lucide-vue-next';
+  HelpCircle,
+} from 'lucide-vue-next'
 
 defineProps({
   isOpen: Boolean,
-});
+})
 </script>
 
 <style scoped>
