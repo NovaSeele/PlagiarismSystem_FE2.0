@@ -1,8 +1,8 @@
 <template>
-  <div class="flex-1 p-8 overflow-y-auto h-full">
+  <div class="flex-1 p-8 overflow-auto">
     <div v-if="document" class="max-w-4xl mx-auto">
       <div class="mb-6">
-        <router-link
+        <router-link 
           to="/documents"
           class="inline-flex items-center text-blue-600 hover:text-blue-700"
         >
@@ -21,7 +21,7 @@
             <Calendar class="w-4 h-4 mr-2" />
             <span>{{ formatDate(document.upload_at) }}</span>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <!-- <div class="flex flex-wrap gap-2">
             <span
               v-for="category in document.categories"
               :key="category"
@@ -29,7 +29,7 @@
             >
               {{ category }}
             </span>
-          </div>
+          </div> -->
         </div>
 
         <div class="prose max-w-none">
@@ -45,33 +45,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowLeft, User, Calendar, Loader2 } from 'lucide-vue-next'
-import { getDocumentById } from '../api/documents'
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { ArrowLeft, User, Calendar, Loader2 } from 'lucide-vue-next';
+import { getDocumentById } from '../api/documents';
 
-const route = useRoute()
-const document = ref(null)
+const route = useRoute();
+const document = ref(null);
 
 const fetchDocument = async () => {
   try {
-    document.value = await getDocumentById(route.params.id)
+    document.value = await getDocumentById(route.params.id);
   } catch (error) {
-    console.error('Error fetching document:', error)
+    console.error('Error fetching document:', error);
   }
-}
+};
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
-}
+  });
+};
 
 onMounted(() => {
-  fetchDocument()
-})
+  fetchDocument();
+});
 </script>
 
 <style scoped>

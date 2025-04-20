@@ -13,16 +13,12 @@
     </div>
 
     <!-- Categories -->
-    <div class="mb-6">
+    <!-- <div class="mb-6">
       <div class="flex flex-wrap gap-2">
         <button
           @click="selectedCategory = null"
           class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          :class="
-            !selectedCategory
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          "
+          :class="!selectedCategory ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
         >
           Tất cả
         </button>
@@ -31,16 +27,12 @@
           :key="category"
           @click="selectedCategory = category"
           class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          :class="
-            selectedCategory === category
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          "
+          :class="selectedCategory === category ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
         >
           {{ category }}
         </button>
       </div>
-    </div>
+    </div> -->
 
     <!-- Search -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -69,7 +61,7 @@
               <p class="text-sm text-gray-600 mb-4">
                 Uploaded by {{ doc.user }} on {{ formatDate(doc.upload_at) }}
               </p>
-              <div class="flex flex-wrap gap-2">
+              <!-- <div class="flex flex-wrap gap-2">
                 <span
                   v-for="category in doc.categories"
                   :key="category"
@@ -77,7 +69,7 @@
                 >
                   {{ category }}
                 </span>
-              </div>
+              </div> -->
             </div>
             <FileText class="w-6 h-6 text-gray-400 flex-shrink-0" />
           </div>
@@ -97,7 +89,7 @@ import { getAllDocuments, uploadDocument } from '../api/documents'
 
 const documents = ref([])
 const searchQuery = ref('')
-const selectedCategory = ref(null)
+// const selectedCategory = ref(null);
 const fileInput = ref(null)
 
 // Fetch documents
@@ -128,13 +120,13 @@ const onFileSelected = async (event) => {
 }
 
 // Get unique categories
-const uniqueCategories = computed(() => {
-  const categories = new Set()
-  documents.value.forEach((doc) => {
-    doc.categories.forEach((category) => categories.add(category))
-  })
-  return Array.from(categories)
-})
+// const uniqueCategories = computed(() => {
+//   const categories = new Set();
+//   documents.value.forEach(doc => {
+//     doc.categories.forEach(category => categories.add(category));
+//   });
+//   return Array.from(categories);
+// });
 
 // Filter documents based on search and category
 const filteredDocuments = computed(() => {
@@ -144,10 +136,10 @@ const filteredDocuments = computed(() => {
       doc.filename.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       doc.content.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    const matchesCategory =
-      !selectedCategory.value || doc.categories.includes(selectedCategory.value)
+    // const matchesCategory = !selectedCategory.value ||
+    //   doc.categories.includes(selectedCategory.value);
 
-    return matchesSearch && matchesCategory
+    return matchesSearch // && matchesCategory;
   })
 })
 

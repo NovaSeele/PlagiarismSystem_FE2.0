@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 // Get all documents
 export const getAllDocuments = async () => {
   try {
-    const response = await api.get('/get_all_pdf_metadata')
+    const response = await api.get('/get_all_pdf_contents')
     return response.data
   } catch (error) {
     console.error('Error fetching documents:', error)
@@ -31,7 +31,7 @@ export const getAllDocuments = async () => {
 // Get single document by ID
 export const getDocumentById = async (id) => {
   try {
-    const response = await api.get('/get_all_pdf_metadata')
+    const response = await api.get('/get_all_pdf_contents')
     const document = response.data.find((doc) => doc._id === id)
     if (!document) {
       throw new Error('Document not found')
