@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import ChatAI from '../views/ChatAI.vue'
+import ViewResults from '../views/ViewResults.vue'
 import Documents from '../views/Documents.vue'
 import DocumentView from '../views/DocumentView.vue'
 import Statistics from '../views/Statistics.vue'
@@ -11,7 +11,7 @@ import Setting from '../views/Setting.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
-  { path: '/chat-ai', name: 'ChatAI', component: ChatAI },
+  { path: '/view-results', name: 'ViewResults', component: ViewResults },
   { path: '/documents', name: 'Documents', component: Documents },
   { path: '/documents/:id', name: 'DocumentView', component: DocumentView },
   { path: '/statistics', name: 'Statistics', component: Statistics },

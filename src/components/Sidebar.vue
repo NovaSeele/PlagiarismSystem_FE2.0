@@ -28,14 +28,14 @@
           <span class="ml-3">Tài liệu</span>
         </router-link>
         <router-link
-          to="/chat-ai"
+          to="/view-results"
           :class="`
             flex items-center px-4 py-3 my-1 mx-2 rounded-lg transition-all duration-200
-            ${$route.path === '/chat-ai' ? 'bg-gray-100 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
+            ${$route.path === '/view-results' ? 'bg-gray-100 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
           `"
         >
           <component :is="MessageSquare" :size="20" />
-          <span class="ml-3">Chat AI</span>
+          <span class="ml-3">Xem kết quả</span>
         </router-link>
 
         <router-link

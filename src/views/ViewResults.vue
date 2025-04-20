@@ -1,6 +1,6 @@
 <template>
   <div class="flex-1 p-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Chat AI</h1>
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Xem kết quả</h1>
     <div class="bg-white rounded-lg shadow h-[calc(100vh-12rem)] flex flex-col">
       <div class="flex-1 p-6 overflow-y-auto">
         <div class="text-gray-600">Tin nhắn sẽ được hiển thị tại đây.</div>
@@ -28,7 +28,7 @@
 import { Send } from 'lucide-vue-next'
 
 export default {
-  name: 'ChatAI',
+  name: 'ViewResults',
   components: {
     Send,
   },
