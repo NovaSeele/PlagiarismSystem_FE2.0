@@ -8,6 +8,7 @@ import PlagiarismCheck from '../views/PlagiarismCheck.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Setting from '../views/Setting.vue'
+import ViewResultDetails from '../views/ViewResultDetails.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
   { path: '/settings', name: 'Settings', component: Setting },
+  { path: '/view-result-details', name: 'ViewResultDetails', component: ViewResultDetails },
 ]
 
 const router = createRouter({
