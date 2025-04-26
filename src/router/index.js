@@ -20,7 +20,12 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
   { path: '/settings', name: 'Settings', component: Setting },
-  { path: '/view-result-details', name: 'ViewResultDetails', component: ViewResultDetails },
+  {
+    path: '/view-result-details/:file1/:file2',
+    name: 'ViewResultDetails',
+    component: ViewResultDetails,
+    props: true,
+  },
 ]
 
 const router = createRouter({

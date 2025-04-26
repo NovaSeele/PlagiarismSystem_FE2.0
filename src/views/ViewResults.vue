@@ -98,8 +98,9 @@
           <div
             v-for="pair in sortedFilteredPairs"
             :key="`${pair.doc1_filename}-${pair.doc2_filename}`"
-            class="border rounded-lg p-2 hover:bg-gray-50 transition-colors"
+            class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
             :class="{ 'border-red-300 bg-red-50 hover:bg-red-100': pair.final_result }"
+            @click="viewPairDetails(pair.doc1_filename, pair.doc2_filename)"
           >
             <!-- Horizontal layout for file names -->
             <div class="flex items-center justify-between gap-1 mb-1">
@@ -208,8 +209,9 @@
               <div
                 v-for="match in docData.sortedMatches"
                 :key="match.otherDoc"
-                class="border rounded-lg p-2 hover:bg-gray-50 transition-colors"
+                class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
                 :class="{ 'border-red-200 bg-red-50 hover:bg-red-100': match.final_result }"
+                @click="viewPairDetails(docName, match.otherDoc)"
               >
                 <!-- Horizontal layout for document name and status -->
                 <div class="flex items-center justify-between mb-1">
@@ -269,8 +271,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import mockData from '../mockData/mock_results.json'
 
+const router = useRouter()
 const results = ref(mockData)
 const filterType = ref('all')
 const sortBy = ref('bert') // Default sort by BERT (highest weight)
@@ -489,4 +493,15 @@ const sortedFilteredGroupedDocuments = computed(() => {
 
   return sortedDocs
 })
+
+// Navigate to detail view for a pair
+const viewPairDetails = (doc1, doc2) => {
+  router.push({
+    name: 'ViewResultDetails',
+    params: {
+      file1: doc1,
+      file2: doc2,
+    },
+  })
+}
 </script>

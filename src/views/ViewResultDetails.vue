@@ -1,10 +1,63 @@
 <template>
   <div class="flex-1 p-3 md:p-4 max-w-7xl mx-auto" @click="handleGlobalClick">
-    <div v-if="pairDetails" class="space-y-4">
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <svg
+        class="animate-spin h-8 w-8 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+      <div class="flex items-center">
+        <svg
+          class="h-6 w-6 text-red-500 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <h3 class="text-lg font-medium text-red-800">Lỗi khi tải dữ liệu</h3>
+      </div>
+      <div class="mt-2 text-sm text-red-700">{{ error }}</div>
+      <div class="mt-4">
+        <button
+          @click="goBackToResults"
+          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        >
+          Quay lại trang kết quả
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="pairDetails" class="space-y-4">
       <!-- Navigation and Summary Header -->
       <div class="flex items-center justify-between">
         <router-link
-          to="/results"
+          to="/view-results"
           class="inline-flex items-center text-blue-600 hover:text-blue-700"
         >
           <svg
@@ -192,7 +245,7 @@
         </div>
 
         <!-- List of matched sections -->
-        <div class="space-y-4 mt-6">
+        <div v-if="bertPlagiarizedSections.length > 0" class="space-y-4 mt-6">
           <div
             v-for="(section, index) in bertPlagiarizedSections"
             :key="index"
@@ -229,59 +282,61 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Loading State -->
-    <div v-else class="flex items-center justify-center h-64">
-      <svg
-        class="animate-spin h-8 w-8 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
+        <!-- No matches found -->
+        <div v-else class="text-center py-4 text-gray-500">Không tìm thấy đoạn văn tương đồng</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import mockData from '../mockData/mock_pair_detail_ver2.0.json'
+import { useRoute, useRouter } from 'vue-router'
+import { comparePdfsByName } from '../api/plagiarism'
 
-// In a real implementation, we would fetch data based on the route params
-// For now, we'll just use the mock data
+// Use route parameters to get file names
 const route = useRoute()
+const router = useRouter()
 const pairDetails = ref(null)
 const hoveredSection = ref(null)
 const selectedSection = ref(null)
 const selectedSectionSimilarity = ref(null)
+const loading = ref(true)
+const error = ref(null)
 
-// Fetch data
+// Fetch data using the API
 const fetchPairDetails = async () => {
   try {
-    // In a real implementation:
-    // const response = await getPairDetails(route.params.id)
-    // pairDetails.value = response.data
+    loading.value = true
+    error.value = null
 
-    // For now, using mock data
-    pairDetails.value = mockData.all_document_pairs[0]
-  } catch (error) {
-    console.error('Error fetching pair details:', error)
+    // Get file names from route parameters
+    const file1 = route.params.file1
+    const file2 = route.params.file2
+
+    if (!file1 || !file2) {
+      throw new Error('Missing file names in URL parameters')
+    }
+
+    // Remove .pdf extension if present (API expects name without extension)
+    const file1Name = file1.endsWith('.pdf') ? file1.slice(0, -4) : file1
+    const file2Name = file2.endsWith('.pdf') ? file2.slice(0, -4) : file2
+
+    // Call the API to get comparison results
+    const response = await comparePdfsByName(file1Name, file2Name)
+
+    // The API returns the whole result object, but we need the first pair in all_document_pairs
+    if (response.all_document_pairs && response.all_document_pairs.length > 0) {
+      pairDetails.value = response.all_document_pairs[0]
+    } else {
+      throw new Error('No comparison results found')
+    }
+  } catch (err) {
+    console.error('Error fetching pair details:', err)
+    error.value = err.message || 'Failed to load comparison results'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -295,6 +350,8 @@ const bertPlagiarizedSections = computed(() => {
 
 // Process document content for highlighting
 const processDocumentContent = (content, sections, isDoc1) => {
+  if (!content) return []
+
   const chunks = []
   let lastIndex = 0
 
@@ -302,32 +359,36 @@ const processDocumentContent = (content, sections, isDoc1) => {
   const allSections = []
 
   // Process BERT matches only
-  pairDetails.value.bert_sections.forEach((section, index) => {
-    const text = isDoc1 ? section.doc1_content : section.doc2_content
-    allSections.push({
-      text,
-      start: content.toLowerCase().indexOf(text.toLowerCase()),
-      length: text.length,
-      type: 'bert',
-      sectionId: `bert-${index}`,
-      similarity: section.similarity_percentage,
-    })
-  })
-
-  // Process all plagiarized sections (only BERT)
-  pairDetails.value.all_plagiarized_sections
-    .filter((section) => section.detection_layer === 'bert')
-    .forEach((section, index) => {
+  if (pairDetails.value.bert_sections) {
+    pairDetails.value.bert_sections.forEach((section, index) => {
       const text = isDoc1 ? section.doc1_content : section.doc2_content
       allSections.push({
         text,
         start: content.toLowerCase().indexOf(text.toLowerCase()),
         length: text.length,
         type: 'bert',
-        sectionId: `section-${index}`,
+        sectionId: `bert-${index}`,
         similarity: section.similarity_percentage,
       })
     })
+  }
+
+  // Process all plagiarized sections (only BERT)
+  if (pairDetails.value.all_plagiarized_sections) {
+    pairDetails.value.all_plagiarized_sections
+      .filter((section) => section.detection_layer === 'bert')
+      .forEach((section, index) => {
+        const text = isDoc1 ? section.doc1_content : section.doc2_content
+        allSections.push({
+          text,
+          start: content.toLowerCase().indexOf(text.toLowerCase()),
+          length: text.length,
+          type: 'bert',
+          sectionId: `section-${index}`,
+          similarity: section.similarity_percentage,
+        })
+      })
+  }
 
   // Sort sections by start position
   allSections.sort((a, b) => a.start - b.start)
@@ -401,7 +462,7 @@ const doc1Chunks = computed(() => {
   if (!pairDetails.value) return []
   return processDocumentContent(
     pairDetails.value.doc1_content,
-    [...pairDetails.value.bert_sections],
+    pairDetails.value.bert_sections || [],
     true,
   )
 })
@@ -410,7 +471,7 @@ const doc2Chunks = computed(() => {
   if (!pairDetails.value) return []
   return processDocumentContent(
     pairDetails.value.doc2_content,
-    [...pairDetails.value.bert_sections],
+    pairDetails.value.bert_sections || [],
     false,
   )
 })
@@ -464,6 +525,11 @@ const getSimilarityTextColor = (percentage) => {
   if (percentage >= 75) return 'text-red-600'
   if (percentage >= 50) return 'text-orange-600'
   return 'text-green-600'
+}
+
+// Navigate back to results
+const goBackToResults = () => {
+  router.push('/view-results')
 }
 
 onMounted(() => {
