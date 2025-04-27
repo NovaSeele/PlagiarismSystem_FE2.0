@@ -2,267 +2,323 @@
   <div class="flex-1 p-3 md:p-4 max-w-7xl mx-auto">
     <h1 class="text-xl font-bold text-gray-900 mb-3">Kết quả kiểm tra đạo văn</h1>
 
-    <!-- Dashboard Header with Summary Stats - More compact -->
-    <div class="bg-white rounded-lg shadow-sm p-2 mb-4 flex justify-between items-center text-sm">
-      <div class="flex items-center gap-4">
-        <div class="text-center px-2">
-          <span class="text-xs font-medium text-gray-500">Tài liệu</span>
-          <p class="text-base font-bold text-gray-900">{{ results.document_count }}</p>
+    <!-- Result type indicator -->
+    <div v-if="!noResults" class="mb-4 bg-blue-50 rounded-lg p-3 text-sm">
+      <span class="font-medium text-blue-700">
+        Đang xem kết quả:
+        <span v-if="resultType === 'queue'" class="font-bold">Các tài liệu trong hàng đợi</span>
+        <span v-else-if="resultType === 'all'" class="font-bold"
+          >Toàn bộ tài liệu trong cơ sở dữ liệu</span
+        >
+        <span v-else class="font-bold">Kiểm tra đạo văn</span>
+      </span>
+    </div>
+
+    <!-- No results message -->
+    <div v-if="noResults" class="bg-yellow-50 rounded-lg p-6 mb-6 text-center">
+      <div class="flex flex-col items-center justify-center">
+        <div class="rounded-full p-3 bg-yellow-100 mb-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8 text-yellow-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
         </div>
-        <div class="text-center px-2 border-l border-gray-200">
-          <span class="text-xs font-medium text-gray-500">Thời gian</span>
-          <p class="text-base font-bold text-gray-900">
-            {{ formatTime(results.execution_time_seconds) }}
-          </p>
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <div class="text-center px-2 border-l border-gray-200">
-          <span class="text-xs font-medium text-gray-500">Cặp so sánh</span>
-          <p class="text-base font-bold text-gray-900">{{ results.summary.total_pairs }}</p>
-        </div>
-        <div class="text-center px-2 border-l border-gray-200">
-          <span class="text-xs font-medium text-gray-500">Trùng lặp</span>
-          <p class="text-base font-bold text-purple-700">
-            {{ results.summary.final_result_count }}
-          </p>
-        </div>
+        <h2 class="text-lg font-medium text-yellow-800 mb-2">
+          Không tìm thấy kết quả kiểm tra đạo văn
+        </h2>
+        <p class="text-yellow-700 mb-4">Vui lòng thực hiện kiểm tra trước khi xem kết quả.</p>
+        <router-link
+          to="/plagiarism-check"
+          class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+        >
+          Đi đến trang kiểm tra đạo văn
+        </router-link>
       </div>
     </div>
 
-    <!-- Simplified Control panel -->
-    <div class="bg-white rounded-lg shadow-sm p-2 mb-4 flex flex-wrap justify-between items-center">
-      <div class="flex gap-3">
+    <div v-if="results">
+      <!-- Dashboard Header with Summary Stats - More compact -->
+      <div class="bg-white rounded-lg shadow-sm p-2 mb-4 flex justify-between items-center text-sm">
+        <div class="flex items-center gap-4">
+          <div class="text-center px-2">
+            <span class="text-xs font-medium text-gray-500">Tài liệu</span>
+            <p class="text-base font-bold text-gray-900">{{ results.document_count }}</p>
+          </div>
+          <div class="text-center px-2 border-l border-gray-200">
+            <span class="text-xs font-medium text-gray-500">Thời gian</span>
+            <p class="text-base font-bold text-gray-900">
+              {{ formatTime(results.execution_time_seconds) }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-center px-2 border-l border-gray-200">
+            <span class="text-xs font-medium text-gray-500">Cặp so sánh</span>
+            <p class="text-base font-bold text-gray-900">{{ results.summary.total_pairs }}</p>
+          </div>
+          <div class="text-center px-2 border-l border-gray-200">
+            <span class="text-xs font-medium text-gray-500">Trùng lặp</span>
+            <p class="text-base font-bold text-purple-700">
+              {{ results.summary.final_result_count }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simplified Control panel -->
+      <div
+        class="bg-white rounded-lg shadow-sm p-2 mb-4 flex flex-wrap justify-between items-center"
+      >
+        <div class="flex gap-3">
+          <div>
+            <select
+              v-model="filterType"
+              class="px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="all">Tất cả</option>
+              <option value="matched">Chỉ trùng lặp</option>
+              <option value="not-matched">Không trùng lặp</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1">
+            <select
+              v-model="sortBy"
+              class="px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="bert">BERT</option>
+              <option value="fasttext">FastText</option>
+              <option value="lsa">LSA</option>
+              <option value="filename">Tên tài liệu</option>
+              <option value="matchCount">Số lượng trùng lặp</option>
+            </select>
+            <button
+              @click="toggleSortDirection"
+              class="p-1 border rounded-md hover:bg-gray-100 focus:outline-none"
+              :title="sortDirection === 'desc' ? 'Giảm dần' : 'Tăng dần'"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                :class="{ 'rotate-180': sortDirection === 'asc' }"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
         <div>
           <select
-            v-model="filterType"
+            v-model="viewMode"
             class="px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="all">Tất cả</option>
-            <option value="matched">Chỉ trùng lặp</option>
-            <option value="not-matched">Không trùng lặp</option>
+            <option value="pairs">Cặp so sánh</option>
+            <option value="documents">Tài liệu</option>
           </select>
         </div>
-        <div class="flex items-center gap-1">
-          <select
-            v-model="sortBy"
-            class="px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="bert">BERT</option>
-            <option value="fasttext">FastText</option>
-            <option value="lsa">LSA</option>
-            <option value="filename">Tên tài liệu</option>
-            <option value="matchCount">Số lượng trùng lặp</option>
-          </select>
-          <button
-            @click="toggleSortDirection"
-            class="p-1 border rounded-md hover:bg-gray-100 focus:outline-none"
-            :title="sortDirection === 'desc' ? 'Giảm dần' : 'Tăng dần'"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              :class="{ 'rotate-180': sortDirection === 'asc' }"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      </div>
+
+      <!-- Results View - Pairs Mode (Optimized for horizontal layout) -->
+      <div v-if="viewMode === 'pairs'" class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="p-3">
+          <h2 class="text-sm font-semibold text-gray-700 mb-3">Chi tiết kết quả so sánh</h2>
+
+          <!-- Pairs Horizontal Layout -->
+          <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
+            <div
+              v-for="pair in sortedFilteredPairs"
+              :key="`${pair.doc1_filename}-${pair.doc2_filename}`"
+              class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
+              :class="{ 'border-red-300 bg-red-50 hover:bg-red-100': pair.final_result }"
+              @click="viewPairDetails(pair.doc1_filename, pair.doc2_filename)"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div>
-        <select
-          v-model="viewMode"
-          class="px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="pairs">Cặp so sánh</option>
-          <option value="documents">Tài liệu</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Results View - Pairs Mode (Optimized for horizontal layout) -->
-    <div v-if="viewMode === 'pairs'" class="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div class="p-3">
-        <h2 class="text-sm font-semibold text-gray-700 mb-3">Chi tiết kết quả so sánh</h2>
-
-        <!-- Pairs Horizontal Layout -->
-        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
-          <div
-            v-for="pair in sortedFilteredPairs"
-            :key="`${pair.doc1_filename}-${pair.doc2_filename}`"
-            class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
-            :class="{ 'border-red-300 bg-red-50 hover:bg-red-100': pair.final_result }"
-            @click="viewPairDetails(pair.doc1_filename, pair.doc2_filename)"
-          >
-            <!-- Horizontal layout for file names -->
-            <div class="flex items-center justify-between gap-1 mb-1">
-              <div class="flex items-center gap-1 truncate flex-1">
-                <span class="text-sm font-medium text-gray-900 truncate max-w-[45%]">{{
-                  pair.doc1_filename
-                }}</span>
-                <svg
-                  class="h-3 w-3 text-gray-400 flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5 12H19M19 12L12 5M19 12L12 19"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <span class="text-sm font-medium text-gray-900 truncate max-w-[45%]">{{
-                  pair.doc2_filename
-                }}</span>
-              </div>
-              <div :class="getResultBadgeClass(pair.final_result)">
-                {{ pair.final_result ? 'Trùng lặp' : 'Không trùng lặp' }}
-              </div>
-            </div>
-
-            <!-- Metrics with BERT more prominent and others as text only -->
-            <div class="flex items-center gap-3">
-              <!-- BERT Similarity (Keep the progress bar) -->
-              <div class="flex-[2]">
-                <div class="flex justify-between mb-0.5 items-center">
-                  <span class="text-xs font-medium text-purple-800">BERT</span>
-                  <span class="text-xs font-bold">{{ pair.bert_similarity_percentage }}%</span>
-                </div>
-                <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-purple-600 rounded-full"
-                    :style="{ width: `${pair.bert_similarity_percentage}%` }"
-                  ></div>
-                </div>
-              </div>
-
-              <!-- Other Similarities as text only -->
-              <div class="flex gap-2 items-center">
-                <span class="text-xs font-medium text-green-700"
-                  >FT: {{ pair.fasttext_similarity_percentage }}%</span
-                >
-                <span class="text-xs font-medium text-blue-700"
-                  >LSA: {{ pair.lsa_similarity_percentage }}%</span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- No Results Message -->
-        <div v-if="sortedFilteredPairs.length === 0" class="text-center py-6">
-          <p class="text-gray-500">Không tìm thấy kết quả phù hợp với bộ lọc hiện tại.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Results View - Documents Mode (Optimized for horizontal layout) -->
-    <div v-if="viewMode === 'documents'" class="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div class="p-3">
-        <h2 class="text-sm font-semibold text-gray-700 mb-3">Phân tích theo tài liệu</h2>
-
-        <!-- Document-based grouping -->
-        <div class="space-y-4">
-          <div
-            v-for="(docData, docName) in sortedFilteredGroupedDocuments"
-            :key="docName"
-            class="border rounded-lg p-2"
-            :class="{ 'border-red-300 bg-red-50': docData.hasPlagiarism }"
-          >
-            <!-- Document header with horizontal layout -->
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-base font-medium text-gray-900 truncate max-w-[70%]" :title="docName">
-                {{ docName }}
-              </h3>
-              <div
-                v-if="docData.hasPlagiarism"
-                class="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full"
-              >
-                {{ docData.matchCount }} trùng lặp
-              </div>
-              <div
-                v-else
-                class="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full"
-              >
-                Không trùng lặp
-              </div>
-            </div>
-
-            <!-- No matches message -->
-            <div v-if="docData.matches.length === 0" class="text-center py-2 text-xs text-gray-500">
-              Không phát hiện trùng lặp
-            </div>
-
-            <!-- Matches with horizontal layout -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
-              <div
-                v-for="match in docData.sortedMatches"
-                :key="match.otherDoc"
-                class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
-                :class="{ 'border-red-200 bg-red-50 hover:bg-red-100': match.final_result }"
-                @click="viewPairDetails(docName, match.otherDoc)"
-              >
-                <!-- Horizontal layout for document name and status -->
-                <div class="flex items-center justify-between mb-1">
-                  <span
-                    class="text-sm font-medium text-gray-900 truncate max-w-[70%]"
-                    :title="match.otherDoc"
+              <!-- Horizontal layout for file names -->
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <div class="flex items-center gap-1 truncate flex-1">
+                  <span class="text-sm font-medium text-gray-900 truncate max-w-[45%]">{{
+                    pair.doc1_filename
+                  }}</span>
+                  <svg
+                    class="h-3 w-3 text-gray-400 flex-shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    {{ match.otherDoc }}
-                  </span>
-                  <div :class="getResultBadgeClass(match.final_result)">
-                    {{ match.final_result ? 'Trùng lặp' : 'Không trùng lặp' }}
+                    <path
+                      d="M5 12H19M19 12L12 5M19 12L12 19"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span class="text-sm font-medium text-gray-900 truncate max-w-[45%]">{{
+                    pair.doc2_filename
+                  }}</span>
+                </div>
+                <div :class="getResultBadgeClass(pair.final_result)">
+                  {{ pair.final_result ? 'Trùng lặp' : 'Không trùng lặp' }}
+                </div>
+              </div>
+
+              <!-- Metrics with BERT more prominent and others as text only -->
+              <div class="flex items-center gap-3">
+                <!-- BERT Similarity (Keep the progress bar) -->
+                <div class="flex-[2]">
+                  <div class="flex justify-between mb-0.5 items-center">
+                    <span class="text-xs font-medium text-purple-800">BERT</span>
+                    <span class="text-xs font-bold">{{ pair.bert_similarity_percentage }}%</span>
+                  </div>
+                  <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      class="h-full bg-purple-600 rounded-full"
+                      :style="{ width: `${pair.bert_similarity_percentage}%` }"
+                    ></div>
                   </div>
                 </div>
 
-                <!-- Horizontal layout for similarity measures -->
-                <div class="flex items-center gap-2">
-                  <!-- BERT Similarity (Primary) -->
-                  <div class="flex-[2]">
-                    <div class="flex justify-between mb-0.5 items-center">
-                      <span class="text-xs font-medium text-purple-800">BERT</span>
-                      <span class="text-xs font-bold">{{ match.bert_similarity_percentage }}%</span>
-                    </div>
-                    <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        class="h-full bg-purple-600 rounded-full"
-                        :style="{ width: `${match.bert_similarity_percentage}%` }"
-                      ></div>
+                <!-- Other Similarities as text only -->
+                <div class="flex gap-2 items-center">
+                  <span class="text-xs font-medium text-green-700"
+                    >FT: {{ pair.fasttext_similarity_percentage }}%</span
+                  >
+                  <span class="text-xs font-medium text-blue-700"
+                    >LSA: {{ pair.lsa_similarity_percentage }}%</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- No Results Message -->
+          <div v-if="sortedFilteredPairs.length === 0" class="text-center py-6">
+            <p class="text-gray-500">Không tìm thấy kết quả phù hợp với bộ lọc hiện tại.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results View - Documents Mode (Optimized for horizontal layout) -->
+      <div v-if="viewMode === 'documents'" class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="p-3">
+          <h2 class="text-sm font-semibold text-gray-700 mb-3">Phân tích theo tài liệu</h2>
+
+          <!-- Document-based grouping -->
+          <div class="space-y-4">
+            <div
+              v-for="(docData, docName) in sortedFilteredGroupedDocuments"
+              :key="docName"
+              class="border rounded-lg p-2"
+              :class="{ 'border-red-300 bg-red-50': docData.hasPlagiarism }"
+            >
+              <!-- Document header with horizontal layout -->
+              <div class="flex items-center justify-between mb-2">
+                <h3
+                  class="text-base font-medium text-gray-900 truncate max-w-[70%]"
+                  :title="docName"
+                >
+                  {{ docName }}
+                </h3>
+                <div
+                  v-if="docData.hasPlagiarism"
+                  class="px-2 py-0.5 text-xs font-medium text-red-800 bg-red-100 rounded-full"
+                >
+                  {{ docData.matchCount }} trùng lặp
+                </div>
+                <div
+                  v-else
+                  class="px-2 py-0.5 text-xs font-medium text-green-800 bg-green-100 rounded-full"
+                >
+                  Không trùng lặp
+                </div>
+              </div>
+
+              <!-- No matches message -->
+              <div
+                v-if="docData.matches.length === 0"
+                class="text-center py-2 text-xs text-gray-500"
+              >
+                Không phát hiện trùng lặp
+              </div>
+
+              <!-- Matches with horizontal layout -->
+              <div v-else class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
+                <div
+                  v-for="match in docData.sortedMatches"
+                  :key="match.otherDoc"
+                  class="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-pointer"
+                  :class="{ 'border-red-200 bg-red-50 hover:bg-red-100': match.final_result }"
+                  @click="viewPairDetails(docName, match.otherDoc)"
+                >
+                  <!-- Horizontal layout for document name and status -->
+                  <div class="flex items-center justify-between mb-1">
+                    <span
+                      class="text-sm font-medium text-gray-900 truncate max-w-[70%]"
+                      :title="match.otherDoc"
+                    >
+                      {{ match.otherDoc }}
+                    </span>
+                    <div :class="getResultBadgeClass(match.final_result)">
+                      {{ match.final_result ? 'Trùng lặp' : 'Không trùng lặp' }}
                     </div>
                   </div>
 
-                  <!-- Other metrics as text only -->
-                  <div class="flex gap-2 items-center">
-                    <span class="text-xs font-medium text-green-700"
-                      >FT: {{ match.fasttext_similarity_percentage }}%</span
-                    >
-                    <span class="text-xs font-medium text-blue-700"
-                      >LSA: {{ match.lsa_similarity_percentage }}%</span
-                    >
+                  <!-- Horizontal layout for similarity measures -->
+                  <div class="flex items-center gap-2">
+                    <!-- BERT Similarity (Primary) -->
+                    <div class="flex-[2]">
+                      <div class="flex justify-between mb-0.5 items-center">
+                        <span class="text-xs font-medium text-purple-800">BERT</span>
+                        <span class="text-xs font-bold"
+                          >{{ match.bert_similarity_percentage }}%</span
+                        >
+                      </div>
+                      <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          class="h-full bg-purple-600 rounded-full"
+                          :style="{ width: `${match.bert_similarity_percentage}%` }"
+                        ></div>
+                      </div>
+                    </div>
+
+                    <!-- Other metrics as text only -->
+                    <div class="flex gap-2 items-center">
+                      <span class="text-xs font-medium text-green-700"
+                        >FT: {{ match.fasttext_similarity_percentage }}%</span
+                      >
+                      <span class="text-xs font-medium text-blue-700"
+                        >LSA: {{ match.lsa_similarity_percentage }}%</span
+                      >
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- No Results Message for Document View -->
-        <div
-          v-if="Object.keys(sortedFilteredGroupedDocuments).length === 0"
-          class="text-center py-6"
-        >
-          <p class="text-gray-500">Không tìm thấy tài liệu phù hợp với bộ lọc hiện tại.</p>
+          <!-- No Results Message for Document View -->
+          <div
+            v-if="Object.keys(sortedFilteredGroupedDocuments).length === 0"
+            class="text-center py-6"
+          >
+            <p class="text-gray-500">Không tìm thấy tài liệu phù hợp với bộ lọc hiện tại.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -270,16 +326,35 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import mockData from '../mockData/mock_results.json'
+import { getResults, getLatestResultType } from '@/store/plagiarismResults'
 
 const router = useRouter()
-const results = ref(mockData)
+const results = ref(null)
 const filterType = ref('all')
 const sortBy = ref('bert') // Default sort by BERT (highest weight)
 const sortDirection = ref('desc') // Default sort direction (descending)
 const viewMode = ref('documents') // Default to document view for better organization
+const resultType = ref('') // 'queue' or 'all'
+const noResults = ref(false)
+
+// Load results from storage
+const loadResults = () => {
+  const storedResults = getResults()
+
+  if (storedResults) {
+    results.value = storedResults
+    resultType.value = getLatestResultType()
+    noResults.value = false
+  } else {
+    // If no results in storage, fallback to mock data for development
+    console.warn('No results found in storage, using mock data')
+    results.value = mockData
+    noResults.value = true
+  }
+}
 
 // Format execution time
 const formatTime = (seconds) => {
@@ -321,6 +396,8 @@ const sortByAttribute = (a, b, attribute) => {
 
 // Filter results as pairs
 const filteredPairs = computed(() => {
+  if (!results.value) return []
+
   return results.value.all_document_pairs.filter((pair) => {
     // Filter by match status
     if (filterType.value === 'matched' && !pair.final_result) return false
@@ -338,6 +415,8 @@ const sortedFilteredPairs = computed(() => {
 
 // Group by document for document-oriented view
 const groupedDocuments = computed(() => {
+  if (!results.value) return {}
+
   const docs = {}
 
   // Process all document pairs
@@ -504,4 +583,8 @@ const viewPairDetails = (doc1, doc2) => {
     },
   })
 }
+
+onMounted(() => {
+  loadResults()
+})
 </script>

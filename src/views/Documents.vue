@@ -2,13 +2,23 @@
   <div class="flex-1 p-8">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Tài liệu</h1>
-      <button
-        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        @click="handleUpload"
-      >
-        <Upload class="w-5 h-5 mr-2" />
-        Tải lên tài liệu
-      </button>
+      <div class="flex space-x-3">
+        <button
+          v-if="selectedDocuments.length > 0"
+          class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          @click="addToQueue"
+        >
+          <FileSearch class="w-5 h-5 mr-2" />
+          Thêm {{ selectedDocuments.length }} vào kiểm tra đạo văn
+        </button>
+        <button
+          class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          @click="handleUpload"
+        >
+          <Upload class="w-5 h-5 mr-2" />
+          Tải lên tài liệu
+        </button>
+      </div>
       <input type="file" ref="fileInput" accept=".pdf" class="hidden" @change="onFileSelected" />
     </div>
 
@@ -52,11 +62,38 @@
       <div
         v-for="doc in filteredDocuments"
         :key="doc._id"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
       >
+        <div class="absolute top-4 left-4 z-10">
+          <label :for="`doc-${doc._id}`" class="checkbox-container">
+            <input
+              type="checkbox"
+              :id="`doc-${doc._id}`"
+              v-model="selectedDocuments"
+              :value="doc"
+              class="sr-only"
+              @click.stop
+            />
+            <span class="custom-checkbox">
+              <svg
+                v-if="selectedDocuments.includes(doc)"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3 w-3"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </span>
+          </label>
+        </div>
         <router-link :to="`/documents/${doc._id}`" class="block p-6">
           <div class="flex items-start justify-between">
-            <div class="flex-1">
+            <div class="flex-1 pl-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ doc.filename }}</h3>
               <p class="text-sm text-gray-600 mb-4">
                 Uploaded by {{ doc.user }} on {{ formatDate(doc.upload_at) }}
@@ -84,13 +121,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Search, Upload, FileText } from 'lucide-vue-next'
+import { Search, Upload, FileText, FileSearch } from 'lucide-vue-next'
 import { getAllDocuments, uploadDocument } from '../api/documents'
+import { useRouter } from 'vue-router'
 
 const documents = ref([])
 const searchQuery = ref('')
 // const selectedCategory = ref(null);
 const fileInput = ref(null)
+const selectedDocuments = ref([])
+const router = useRouter()
 
 // Fetch documents
 const fetchDocuments = async () => {
@@ -152,6 +192,18 @@ const formatDate = (dateString) => {
   })
 }
 
+// Add selected documents to plagiarism check queue
+const addToQueue = () => {
+  // Store selected documents in localStorage
+  localStorage.setItem('plagiarismCheckQueue', JSON.stringify(selectedDocuments.value))
+
+  // Navigate to plagiarism check page
+  router.push('/plagiarism-check')
+
+  // Clear selection after adding to queue
+  selectedDocuments.value = []
+}
+
 onMounted(() => {
   fetchDocuments()
 })
@@ -164,5 +216,38 @@ onMounted(() => {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Custom checkbox styling */
+.checkbox-container {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  width: 22px;
+  background-color: white;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+input:checked + .custom-checkbox {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+input:focus + .custom-checkbox {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.custom-checkbox:hover {
+  border-color: #3b82f6;
 }
 </style>

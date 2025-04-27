@@ -1,164 +1,295 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto space-y-8">
-    <h1 class="text-3xl font-bold text-gray-800">Plagiarism Report</h1>
+  <div class="flex-1 p-3 md:p-4 max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Kiểm tra đạo văn</h1>
 
-    <!-- File Categories -->
-    <div class="bg-white rounded-xl shadow p-4">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">File Categories</h2>
-      <ul class="space-y-2">
-        <li
-          v-for="(categories, file) in fileCategories"
-          :key="file"
-          class="bg-gray-50 p-3 rounded-lg"
-        >
-          <p class="font-medium text-gray-900">{{ file }}</p>
-          <div class="flex flex-wrap mt-1 gap-2">
-            <span
-              v-for="category in categories"
-              :key="category"
-              class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded"
-            >
-              {{ category }}
-            </span>
-          </div>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Similarity Matrix -->
-    <div class="bg-white rounded-xl shadow p-4 overflow-auto">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">Similarity Matrix</h2>
-      <table class="min-w-full text-sm text-center border border-gray-200">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="border px-4 py-2">File</th>
-            <th v-for="file in fileList" :key="file" class="border px-4 py-2">{{ file }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, rowFile) in comparisonMatrix" :key="rowFile">
-            <td class="border px-4 py-2 font-medium text-gray-700">{{ rowFile }}</td>
-            <td v-for="file in fileList" :key="file" class="border px-4 py-2">
-              {{ row[file].toFixed(2) }}%
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Detailed Report -->
-    <div class="bg-white rounded-xl shadow p-4">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">Detailed Report</h2>
-      <div class="mb-4">
-        <label for="pairSelect" class="block text-sm font-medium text-gray-600 mb-1"
-          >Select File Pair</label
-        >
-        <select id="pairSelect" v-model="selectedPair" class="w-full border-gray-300 rounded p-2">
-          <option disabled value="">-- Select a Pair --</option>
-          <option v-for="pair in reportPairs" :key="pair" :value="pair">
-            {{ pair }}
-          </option>
-        </select>
+    <!-- Queue panel -->
+    <div v-if="queuedDocuments.length > 0" class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">
+          Tài liệu trong hàng đợi ({{ queuedDocuments.length }})
+        </h2>
+        <div class="flex space-x-3">
+          <button
+            @click="checkQueuedDocuments"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isLoading"
+          >
+            <span v-if="isLoading">Đang xử lý...</span>
+            <span v-else>Kiểm tra tài liệu đã chọn</span>
+          </button>
+          <button
+            @click="clearQueue"
+            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isLoading"
+          >
+            Xóa hàng đợi
+          </button>
+        </div>
       </div>
 
-      <div v-if="selectedPair" class="border-t pt-4 space-y-2">
-        <p>
-          <span class="font-medium text-gray-700">Similarity:</span>
-          {{ detailedReport[selectedPair].similarity_percentage }}
-        </p>
-        <p>
-          <span class="font-medium text-gray-700">Raw Score:</span>
-          {{ detailedReport[selectedPair].raw_score.toFixed(4) }}
-        </p>
-        <div>
-          <p class="font-medium text-gray-700 mb-1">Components:</p>
-          <ul class="list-disc list-inside text-gray-600">
-            <li>Jaccard: {{ detailedReport[selectedPair].components.jaccard.toFixed(4) }}</li>
-            <li>Minhash: {{ detailedReport[selectedPair].components.minhash.toFixed(4) }}</li>
-            <li>
-              Transformer: {{ detailedReport[selectedPair].components.transformer.toFixed(4) }}
-            </li>
-          </ul>
+      <div class="overflow-y-auto max-h-64 border rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Tên tài liệu
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Người tải lên
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Ngày tải
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(doc, index) in queuedDocuments" :key="index">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {{ doc.filename }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ doc.user }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ formatDate(doc.upload_at) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <button @click="removeFromQueue(index)" class="text-red-600 hover:text-red-800">
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty queue notification -->
+    <div v-else class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="flex flex-col items-center justify-center py-6">
+        <div class="bg-blue-50 rounded-full p-4 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10 text-blue-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
         </div>
+        <h2 class="text-lg font-semibold text-center mb-2">Chưa có tài liệu nào trong hàng đợi</h2>
+        <p class="text-gray-600 text-center mb-4">
+          Vui lòng chọn các tài liệu từ trang Tài liệu để thêm vào hàng đợi kiểm tra đạo văn.
+        </p>
+        <router-link
+          to="/documents"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Đi đến trang Tài liệu
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Check all documents panel -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-semibold">Kiểm tra toàn bộ cơ sở dữ liệu</h2>
+        <button
+          @click="checkAllDocuments"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="isLoading"
+        >
+          <span v-if="isLoading">Đang xử lý...</span>
+          <span v-else>Kiểm tra toàn bộ tài liệu</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Error notification -->
+    <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+      <div class="flex">
+        <svg
+          class="h-5 w-5 text-red-500 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p class="text-red-700">{{ error }}</p>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { uploadDocument } from '@/api/documents'
+import { checkAllDocuments, checkDocumentsByNames } from '@/api/plagiarism'
+import { saveResults } from '@/store/plagiarismResults'
 
-// Placeholder JSON data
-const jsonData = {
-  comparison_matrix: {
-    'DB+OOP.pdf': {
-      'DB+OOP.pdf': 100,
-      'Internet+CauGiai.pdf': 33.851402282714844,
-      'Nova.pdf': 13.834661483764648,
-    },
-    'Internet+CauGiai.pdf': {
-      'DB+OOP.pdf': 33.851402282714844,
-      'Internet+CauGiai.pdf': 100,
-      'Nova.pdf': 10.414593696594238,
-    },
-    'Nova.pdf': {
-      'DB+OOP.pdf': 13.834661483764648,
-      'Internet+CauGiai.pdf': 10.414593696594238,
-      'Nova.pdf': 100,
-    },
-  },
-  detailed_report: {
-    'DB+OOP.pdf vs Internet+CauGiai.pdf': {
-      similarity_percentage: '33.85%',
-      raw_score: 0.33851402282714843,
-      components: {
-        jaccard: 0.031746031746031744,
-        minhash: 0.0546875,
-        transformer: 0.7814599275588989,
-      },
-    },
-    'DB+OOP.pdf vs Nova.pdf': {
-      similarity_percentage: '13.83%',
-      raw_score: 0.1383466148376465,
-      components: {
-        jaccard: 0,
-        minhash: 0,
-        transformer: 0.34586653113365173,
-      },
-    },
-    'Internet+CauGiai.pdf vs Nova.pdf': {
-      similarity_percentage: '10.41%',
-      raw_score: 0.10414593696594238,
-      components: {
-        jaccard: 0,
-        minhash: 0,
-        transformer: 0.260364830493927,
-      },
-    },
-  },
-  file_categories: {
-    'DB+OOP.pdf': ['cơ sở dữ liệu', 'khoa học máy tính', 'lập trình hướng đối tượng'],
-    'Internet+CauGiai.pdf': ['cơ sở dữ liệu', 'khoa học máy tính', 'mạng máy tính'],
-    'Nova.pdf': ['Khác'],
+export default {
+  name: 'PlagiarismCheck',
+  setup() {
+    const selectedFile = ref(null)
+    const isLoading = ref(false)
+    const error = ref(null)
+    const queuedDocuments = ref([])
+    const router = useRouter()
+
+    const handleFileChange = (event) => {
+      const file = event.target.files[0]
+      if (file && file.type === 'application/pdf') {
+        selectedFile.value = file
+        error.value = null
+      } else {
+        error.value = 'Vui lòng chọn tệp PDF hợp lệ'
+        selectedFile.value = null
+      }
+    }
+
+    const checkPlagiarism = async () => {
+      if (!selectedFile.value) return
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        // Upload the document first
+        await uploadDocument(selectedFile.value)
+
+        // Redirect to results page
+        router.push('/view-results')
+      } catch (err) {
+        console.error('Error checking plagiarism:', err)
+        error.value = 'Có lỗi xảy ra khi kiểm tra đạo văn. Vui lòng thử lại sau.'
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    const loadQueuedDocuments = () => {
+      const queueData = localStorage.getItem('plagiarismCheckQueue')
+      if (queueData) {
+        queuedDocuments.value = JSON.parse(queueData)
+      }
+    }
+
+    const checkQueuedDocuments = async () => {
+      if (queuedDocuments.value.length === 0) return
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        // Extract filenames without .pdf extension
+        const filenames = queuedDocuments.value.map((doc) => {
+          const filename = doc.filename
+          // Remove .pdf extension if present
+          return filename.endsWith('.pdf') ? filename.substring(0, filename.length - 4) : filename
+        })
+
+        // Call the real API
+        const results = await checkDocumentsByNames(filenames)
+
+        // Save results in store
+        saveResults(results, 'queue')
+
+        // Navigate to results page
+        router.push('/view-results')
+      } catch (err) {
+        console.error('Error checking plagiarism for queued documents:', err)
+        error.value = 'Có lỗi xảy ra khi kiểm tra đạo văn. Vui lòng thử lại sau.'
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    const checkAllDocuments = async () => {
+      isLoading.value = true
+      error.value = null
+
+      try {
+        // Call the real API for checking all documents
+        const results = await checkAllDocuments()
+
+        // Save results in store
+        saveResults(results, 'all')
+
+        // Navigate to results page
+        router.push('/view-results')
+      } catch (err) {
+        console.error('Error checking plagiarism for all documents:', err)
+        error.value = 'Có lỗi xảy ra khi kiểm tra đạo văn. Vui lòng thử lại sau.'
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    const removeFromQueue = (index) => {
+      queuedDocuments.value.splice(index, 1)
+      // Update localStorage
+      localStorage.setItem('plagiarismCheckQueue', JSON.stringify(queuedDocuments.value))
+    }
+
+    const clearQueue = () => {
+      queuedDocuments.value = []
+      localStorage.removeItem('plagiarismCheckQueue')
+    }
+
+    // Format date
+    const formatDate = (dateString) => {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    }
+
+    onMounted(() => {
+      loadQueuedDocuments()
+    })
+
+    return {
+      selectedFile,
+      isLoading,
+      error,
+      queuedDocuments,
+      handleFileChange,
+      checkPlagiarism,
+      checkQueuedDocuments,
+      checkAllDocuments,
+      removeFromQueue,
+      clearQueue,
+      formatDate,
+    }
   },
 }
-
-// Extract data for use in template
-const comparisonMatrix = ref(jsonData.comparison_matrix)
-const detailedReport = ref(jsonData.detailed_report)
-const fileCategories = ref(jsonData.file_categories)
-const reportPairs = computed(() => Object.keys(detailedReport.value))
-const fileList = computed(() => Object.keys(comparisonMatrix.value))
-const selectedPair = ref('')
 </script>
-
-<style scoped>
-/* Optional: Customize scrollbar for matrix table if overflowing */
-table::-webkit-scrollbar {
-  height: 8px;
-}
-table::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-</style>

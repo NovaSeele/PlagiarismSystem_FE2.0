@@ -94,47 +94,29 @@
         </div>
 
         <!-- Similarity scores in a nice horizontal layout -->
-        <div class="flex flex-wrap gap-4 items-center mb-2">
-          <div class="flex-1">
-            <span class="text-sm font-medium text-gray-500 mr-2">Tỉ lệ tương đồng tổng thể:</span>
-            <span
-              class="text-sm font-bold"
-              :class="getSimilarityTextColor(pairDetails.bert_similarity_percentage)"
-            >
-              {{ pairDetails.bert_similarity_percentage }}%
-            </span>
-          </div>
-
-          <div class="flex gap-3">
-            <!-- LSA Score -->
-            <div class="flex flex-col">
-              <span class="text-xs font-medium text-blue-600 mb-1">LSA</span>
-              <div class="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-blue-500 rounded-full"
-                  :style="{ width: `${pairDetails.lsa_similarity_percentage}%` }"
-                ></div>
-              </div>
-              <span class="text-xs font-medium mt-1"
-                >{{ pairDetails.lsa_similarity_percentage }}%</span
+        <div class="mb-4">
+          <!-- Overall similarity with progress bar -->
+          <div class="flex flex-col">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium text-gray-500">Tỉ lệ tương đồng tổng thể:</span>
+              <span
+                class="text-sm font-bold"
+                :class="getSimilarityTextColor(pairDetails.bert_similarity_percentage)"
               >
+                {{ pairDetails.bert_similarity_percentage }}%
+              </span>
             </div>
-
-            <!-- BERT Score -->
-            <div class="flex flex-col">
-              <span class="text-xs font-medium text-purple-600 mb-1">BERT</span>
-              <div class="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-purple-500 rounded-full"
-                  :style="{ width: `${pairDetails.bert_similarity_percentage}%` }"
-                ></div>
-              </div>
-              <span class="text-xs font-medium mt-1"
-                >{{ pairDetails.bert_similarity_percentage }}%</span
-              >
+            <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full"
+                :class="getSimilarityBarColor(pairDetails.bert_similarity_percentage)"
+                :style="{ width: `${pairDetails.bert_similarity_percentage}%` }"
+              ></div>
             </div>
           </div>
+        </div>
 
+        <div class="flex justify-end">
           <div>
             <span
               class="px-3 py-1 text-sm font-medium rounded-full"
@@ -525,6 +507,13 @@ const getSimilarityTextColor = (percentage) => {
   if (percentage >= 75) return 'text-red-600'
   if (percentage >= 50) return 'text-orange-600'
   return 'text-green-600'
+}
+
+// Helper function to get bar color based on similarity percentage
+const getSimilarityBarColor = (percentage) => {
+  if (percentage >= 75) return 'bg-red-500'
+  if (percentage >= 50) return 'bg-orange-500'
+  return 'bg-green-500'
 }
 
 // Navigate back to results
