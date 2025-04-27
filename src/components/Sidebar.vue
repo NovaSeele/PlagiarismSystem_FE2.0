@@ -24,18 +24,8 @@
             ${$route.path === '/documents' ? 'bg-gray-100 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
           `"
         >
-          <component :is="FileText" :size="20" />
+          <component :is="LibraryBig" :size="20" />
           <span class="ml-3">Tài liệu</span>
-        </router-link>
-        <router-link
-          to="/view-results"
-          :class="`
-            flex items-center px-4 py-3 my-1 mx-2 rounded-lg transition-all duration-200
-            ${$route.path === '/view-results' ? 'bg-gray-100 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
-          `"
-        >
-          <component :is="MessageSquare" :size="20" />
-          <span class="ml-3">Xem kết quả</span>
         </router-link>
 
         <router-link
@@ -48,6 +38,17 @@
           <component :is="BookCopy" :size="20" />
           <span class="ml-3">Kiểm tra đạo văn</span>
         </router-link>
+
+        <router-link
+          to="/view-results"
+          :class="`
+            flex items-center px-4 py-3 my-1 mx-2 rounded-lg transition-all duration-200
+            ${$route.path === '/view-results' ? 'bg-gray-100 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
+          `"
+        >
+          <component :is="FileText" :size="20" />
+          <span class="ml-3">Xem kết quả</span>
+        </router-link>         
 
         <router-link
           to="/statistics"
@@ -105,6 +106,7 @@ import {
   BookCopy,
   Settings,
   HelpCircle,
+  LibraryBig,
 } from 'lucide-vue-next'
 
 defineProps({

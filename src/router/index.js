@@ -9,6 +9,7 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Setting from '../views/Setting.vue'
 import ViewResultDetails from '../views/ViewResultDetails.vue'
+import Help from '../views/Help.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -20,6 +21,7 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
   { path: '/settings', name: 'Settings', component: Setting },
+  { path: '/help', name: 'Help', component: Help },
   {
     path: '/view-result-details/:file1/:file2',
     name: 'ViewResultDetails',

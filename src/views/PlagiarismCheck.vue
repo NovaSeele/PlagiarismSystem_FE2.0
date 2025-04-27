@@ -152,7 +152,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { uploadDocument } from '@/api/documents'
-import { checkAllDocuments, checkDocumentsByNames } from '@/api/plagiarism'
+import { checkAllDocuments as apiCheckAllDocuments, checkDocumentsByNames } from '@/api/plagiarism'
 import { saveResults } from '@/store/plagiarismResults'
 
 export default {
@@ -238,7 +238,7 @@ export default {
 
       try {
         // Call the real API for checking all documents
-        const results = await checkAllDocuments()
+        const results = await apiCheckAllDocuments()
 
         // Save results in store
         saveResults(results, 'all')

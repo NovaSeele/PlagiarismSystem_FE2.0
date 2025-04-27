@@ -42,7 +42,7 @@ export const getResults = () => {
  * @returns {string} 'queue', 'all', or '' if none
  */
 export const getLatestResultType = () => {
-  return localStorage.getItem(LATEST_RESULT_TYPE_KEY) || ''
+  return localStorage.getItem(LATEST_RESULT_TYPE_KEY) || 'all'
 }
 
 /**
