@@ -12,7 +12,7 @@
           <component :is="MenuIcon" :size="18" />
         </button>
         <router-link to="/" class="text-xl font-medium text-gray-900">
-          PlagiarismCheck
+          NovaSeele Plagiarism Check
         </router-link>
       </div>
 
