@@ -1,8 +1,6 @@
 // Notification API service
 import axios from 'axios'
-
-// Base URL for API
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { getApiUrl } from './config'
 
 // Get authorization header
 const getAuthHeader = () => {
@@ -50,6 +48,8 @@ const getMockNotifications = () => {
  */
 export const fetchNotifications = async () => {
   try {
+    // Get current API URL
+    const API_URL = getApiUrl()
     // Try to fetch from API
     const response = await axios.get(`${API_URL}/notifications`, {
       headers: getAuthHeader(),
@@ -69,6 +69,7 @@ export const fetchNotifications = async () => {
  */
 export const markNotificationAsRead = async (notificationId) => {
   try {
+    const API_URL = getApiUrl()
     const response = await axios.put(
       `${API_URL}/notifications/${notificationId}/read`,
       {},
@@ -88,6 +89,7 @@ export const markNotificationAsRead = async (notificationId) => {
  */
 export const markAllNotificationsAsRead = async () => {
   try {
+    const API_URL = getApiUrl()
     const response = await axios.put(
       `${API_URL}/notifications/read-all`,
       {},
@@ -108,6 +110,7 @@ export const markAllNotificationsAsRead = async () => {
  */
 export const deleteNotification = async (notificationId) => {
   try {
+    const API_URL = getApiUrl()
     const response = await axios.delete(`${API_URL}/notifications/${notificationId}`, {
       headers: getAuthHeader(),
     })
@@ -126,6 +129,7 @@ export const deleteNotification = async (notificationId) => {
  */
 export const updateNotificationSettings = async (settings) => {
   try {
+    const API_URL = getApiUrl()
     const response = await axios.put(`${API_URL}/user/notification-settings`, settings, {
       headers: getAuthHeader(),
     })

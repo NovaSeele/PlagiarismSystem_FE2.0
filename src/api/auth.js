@@ -1,24 +1,8 @@
 import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888'
+import { api, getApiUrl } from './config'
 
 // Check if we should use mock data (helpful for development without backend)
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || false
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-})
-
-// Add request interceptor to add token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
 
 // Mock user data
 const MOCK_USER = {
@@ -40,6 +24,7 @@ export const login = async (usernameOrEmail, password) => {
   }
 
   try {
+    const API_URL = getApiUrl()
     const response = await axios.post(
       API_URL + '/token',
       {

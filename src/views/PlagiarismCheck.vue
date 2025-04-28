@@ -300,6 +300,7 @@ import { useRouter } from 'vue-router'
 import { uploadDocument } from '@/api/documents'
 import { checkAllDocuments as apiCheckAllDocuments, checkDocumentsByNames } from '@/api/plagiarism'
 import { saveResults } from '@/store/plagiarismResults'
+import { getApiUrl, fetchNgrokUrl } from '@/api/config'
 
 export default {
   name: 'PlagiarismCheck',
@@ -409,7 +410,10 @@ export default {
     watch(progressMessages, saveProgressMessages, { deep: true })
 
     // Function to ensure WebSocket is connected before proceeding
-    const ensureWebSocketConnected = () => {
+    const ensureWebSocketConnected = async () => {
+      // First try to fetch latest ngrok URL
+      await fetchNgrokUrl()
+
       return new Promise((resolve) => {
         // If WebSocket is already open, resolve immediately
         if (websocket.value && websocket.value.readyState === WebSocket.OPEN) {
@@ -439,8 +443,9 @@ export default {
     const connectWebSocket = () => {
       // Create WebSocket connection
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsHost = import.meta.env.VITE_API_URL || 'localhost:8888'
-      const wsUrl = wsProtocol + '//' + wsHost.replace(/^https?:\/\//, '') + '/ws'
+      // Get API URL from our config system instead of env var directly
+      const wsHost = getApiUrl().replace(/^https?:\/\//, '')
+      const wsUrl = wsProtocol + '//' + wsHost + '/ws'
 
       console.log('Connecting to WebSocket at:', wsUrl)
 
@@ -604,6 +609,17 @@ export default {
     onMounted(() => {
       loadQueuedDocuments()
       loadProgressMessages()
+
+      // Try to fetch and update the ngrok URL when the component is mounted
+      fetchNgrokUrl()
+        .then((url) => {
+          if (url) {
+            console.log('Successfully retrieved ngrok URL:', url)
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch ngrok URL on mount:', err)
+        })
     })
 
     onBeforeUnmount(() => {

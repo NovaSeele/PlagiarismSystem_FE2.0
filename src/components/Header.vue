@@ -17,6 +17,9 @@
       </div>
 
       <div class="flex items-center gap-4">
+        <!-- Ngrok URL Updater - Always show for admin purposes -->
+        <NgrokUrlUpdater class="mr-2" />
+
         <!-- Not authenticated - show login/register buttons -->
         <template v-if="!userStore.isAuthenticated">
           <router-link
@@ -39,7 +42,7 @@
           <div class="relative">
             <button
               @click="toggleNotificationDropdown"
-              class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 notification-button"
             >
               <BellIcon :size="20" class="dark:text-gray-200" />
               <span
@@ -91,6 +94,7 @@ import { useUserStore } from '../stores/user'
 import { useNotificationStore } from '../stores/notification'
 import { useRouter } from 'vue-router'
 import NotificationDropdown from './NotificationDropdown.vue'
+import NgrokUrlUpdater from './NgrokUrlUpdater.vue'
 
 // Get user store and router
 const userStore = useUserStore()

@@ -6,6 +6,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { fetchNgrokUrl } from './api/config'
 
 // Apply saved theme on app initialization
 const initializeTheme = () => {
@@ -21,7 +22,23 @@ const initializeTheme = () => {
   }
 }
 
+// Try to fetch and update the current ngrok URL
+const initializeApiConfig = async () => {
+  try {
+    const url = await fetchNgrokUrl()
+    if (url) {
+      console.log('🚀 API URL updated to:', url)
+    } else {
+      console.log('⚠️ Could not fetch ngrok URL, using cached or default URL')
+    }
+  } catch (error) {
+    console.error('❌ Error fetching ngrok URL:', error)
+  }
+}
+
+// Initialize app settings
 initializeTheme()
+initializeApiConfig() // This runs asynchronously
 
 const app = createApp(App)
 
