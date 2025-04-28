@@ -159,26 +159,29 @@
       <div class="p-2">
         <div class="divide-y">
           <div
-            class="p-4 hover:bg-gray-50 flex items-center"
             v-for="(activity, index) in recentActivities"
             :key="index"
+            class="p-4 hover:bg-gray-50 cursor-pointer"
+            @click="navigateToActivity(activity)"
           >
-            <div class="p-2 rounded-full" :class="getActivityIconBg(activity.type)">
-              <component
-                :is="getActivityIcon(activity.type)"
-                class="w-5 h-5"
-                :class="getActivityIconColor(activity.type)"
-              />
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
-              <p class="text-xs text-gray-500">{{ activity.time }}</p>
-            </div>
-            <div
-              class="ml-auto text-xs font-medium"
-              :class="getActivityStatusColor(activity.status)"
-            >
-              {{ activity.status }}
+            <div class="flex items-center">
+              <div class="p-2 rounded-full" :class="getActivityIconBg(activity.type)">
+                <component
+                  :is="getActivityIcon(activity.type)"
+                  class="w-5 h-5"
+                  :class="getActivityIconColor(activity.type)"
+                />
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
+                <p class="text-xs text-gray-500">{{ activity.time }}</p>
+              </div>
+              <div
+                class="ml-auto text-xs font-medium"
+                :class="getActivityStatusColor(activity.status)"
+              >
+                {{ activity.status }}
+              </div>
             </div>
           </div>
 
@@ -214,6 +217,7 @@ import { getAllDocuments } from '../api/documents'
 import { getSummaryStatistics, getSimilarityDistribution } from '../api/statistics'
 import { getResults } from '../store/plagiarismResults'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
 // State variables
 const recentActivities = ref([])
@@ -226,6 +230,7 @@ const stats = ref({
   plagiarismChangeRate: 0,
 })
 const isLoading = ref(true)
+const router = useRouter()
 
 // Fetch dashboard statistics from API
 const fetchDashboardStats = async () => {
@@ -302,11 +307,16 @@ const fetchRecentActivities = async () => {
 
       // Add upload activities for the 2 most recent documents
       sortedDocs.slice(0, 2).forEach((doc) => {
+        // Skip documents without names
+        if (!doc.filename && !doc.title) return
+
         activities.push({
-          title: `Tải lên tài liệu "${doc.filename || doc.title || 'Tài liệu không tên'}"`,
+          title: `Tải lên tài liệu "${doc.filename || doc.title}"`,
           time: formatTimeAgo(doc.upload_date || new Date()),
           status: 'Thành công',
           type: 'upload',
+          documentId: doc._id || doc.id, // Save document ID for navigation
+          filename: doc.filename || doc.title,
         })
       })
     }
@@ -319,6 +329,7 @@ const fetchRecentActivities = async () => {
         time: formatTimeAgo(plagiarismResults.timestamp || new Date()),
         status: 'Hoàn thành',
         type: 'check',
+        resultId: plagiarismResults.id || 'latest', // Use result ID or 'latest' as fallback
       })
 
       // Add view result activities
@@ -329,24 +340,29 @@ const fetchRecentActivities = async () => {
           .slice(0, 2)
 
         plagiarizedPairs.forEach((pair) => {
-          const title = pair.file1_name || 'Tài liệu không tên'
+          // Skip documents without names
+          if (!pair.file1_name) return
+
           activities.push({
-            title: `Xem kết quả "${title}"`,
+            title: `Xem kết quả "${pair.file1_name}"`,
             time: formatTimeAgo(new Date(Date.now() - Math.random() * 172800000)), // Random time in last 48 hours
             status: 'Đã xem',
             type: 'view',
+            documentId: pair.file1_id || '', // Save document ID for navigation
+            filename: pair.file1_name,
+            resultId: pair.id || plagiarismResults.id || 'latest',
           })
         })
       }
     }
 
     // Add current check if not enough activities
-    if (activities.length < 3) {
+    if (activities.length < 1) {
       activities.push({
-        title: 'Kiểm tra đạo văn "Tài liệu mới.docx"',
-        time: 'Đang thực hiện',
-        status: 'Đang xử lý',
-        type: 'check',
+        title: 'Chưa có hoạt động nào',
+        time: 'Hiện tại',
+        status: 'Thông tin',
+        type: 'info',
       })
     }
 
@@ -466,6 +482,22 @@ const getActivityStatusColor = (status) => {
     default:
       return 'text-gray-600'
   }
+}
+
+// Function to navigate based on activity type
+const navigateToActivity = (activity) => {
+  if (activity.type === 'upload' && activity.documentId) {
+    // Navigate to document view
+    router.push(`/documents/${activity.documentId}`)
+  } else if (activity.type === 'check' || activity.type === 'view') {
+    // Navigate to results view, with specific result if available
+    if (activity.resultId && activity.resultId !== 'latest') {
+      router.push(`/view-results/${activity.resultId}`)
+    } else {
+      router.push('/view-results')
+    }
+  }
+  // No navigation for other activity types
 }
 
 // Fetch data when component mounts

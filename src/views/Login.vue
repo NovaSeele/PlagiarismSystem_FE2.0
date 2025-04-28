@@ -102,8 +102,17 @@ export default {
         error.value = ''
 
         const token = await login(email.value, password.value)
+        if (!token) {
+          throw new Error('Login failed. No token received.')
+        }
+
         localStorage.setItem('token', token)
         await userStore.fetchUser()
+
+        // Save user data to localStorage for persistence
+        if (userStore.user) {
+          userStore.saveToLocalStorage()
+        }
 
         router.push('/')
       } catch (err) {

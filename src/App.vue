@@ -31,10 +31,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from './stores/user'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 
 const route = useRoute()
+const userStore = useUserStore()
 const isSidebarOpen = ref(true)
 
 // Check if current route is an authentication page
@@ -42,8 +44,12 @@ const isAuthPage = computed(() => {
   return ['/login', '/register'].includes(route.path)
 })
 
-// Make sure dark mode is applied correctly on component mount
-onMounted(() => {
+// On app mount, check authentication status and apply theme
+onMounted(async () => {
+  // Check authentication status
+  await userStore.fetchUser()
+
+  // Apply theme settings
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') {
     document.documentElement.classList.add('dark')

@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_URL = 'http://localhost:8888'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888'
+
+// Check if we should use mock data (helpful for development without backend)
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || false
 
 // Create axios instance with default config
 const api = axios.create({
@@ -17,10 +20,26 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-export const login = async (usernameOrEmail, password) => {
-  try {
-    console.log('before axios', usernameOrEmail, password)
+// Mock user data
+const MOCK_USER = {
+  id: 1,
+  username: 'testuser',
+  email: 'test@example.com',
+  full_name: 'Test User',
+  msv: 'CT123456',
+  role: 'student',
+  avatar: null,
+}
 
+export const login = async (usernameOrEmail, password) => {
+  if (USE_MOCK) {
+    console.log('Using mock login')
+    const mockToken = 'mock_token_' + Math.random().toString(36).substring(2)
+    localStorage.setItem('token', mockToken)
+    return mockToken
+  }
+
+  try {
     const response = await axios.post(
       API_URL + '/token',
       {
@@ -41,10 +60,16 @@ export const login = async (usernameOrEmail, password) => {
     } else {
       console.error('Error occurred during login:', error.message)
     }
+    throw error
   }
 }
 
 export const register = async (userData) => {
+  if (USE_MOCK) {
+    console.log('Using mock register')
+    return { success: true, user: { ...MOCK_USER, ...userData } }
+  }
+
   try {
     const response = await api.post('/register', userData)
     return response.data
@@ -54,10 +79,27 @@ export const register = async (userData) => {
 }
 
 export const getCurrentUser = async () => {
+  if (USE_MOCK) {
+    console.log('Using mock user data')
+    // Check if token exists to simulate authentication
+    const token = localStorage.getItem('token')
+    if (!token || !token.startsWith('mock_token_')) {
+      throw new Error('Unauthorized')
+    }
+    return MOCK_USER
+  }
+
   try {
     const response = await api.get('/users/me')
     return response.data
   } catch (error) {
+    // For network errors, check if token exists and return mock user
+    // to prevent logging out on API unavailability
+    if (!error.response && localStorage.getItem('token')) {
+      console.warn('API unavailable, using cached authentication')
+      return MOCK_USER
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
     }

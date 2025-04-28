@@ -36,12 +36,24 @@
 
         <!-- Authenticated - show notification bell and avatar -->
         <div v-else class="flex items-center space-x-4">
-          <button
-            class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <BellIcon :size="20" class="dark:text-gray-200" />
-            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <div class="relative">
+            <button
+              @click="toggleNotificationDropdown"
+              class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <BellIcon :size="20" class="dark:text-gray-200" />
+              <span
+                v-if="notificationStore.unreadCount > 0"
+                class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+              ></span>
+            </button>
+
+            <NotificationDropdown
+              :is-open="isNotificationDropdownOpen"
+              @close="isNotificationDropdownOpen = false"
+              @clicked="handleNotificationClick"
+            />
+          </div>
 
           <div class="flex items-center space-x-3">
             <router-link to="/settings" class="flex items-center">
@@ -73,22 +85,52 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { User as UserIcon, Bell as BellIcon, Menu as MenuIcon, LogIn } from 'lucide-vue-next'
 import { useUserStore } from '../stores/user'
+import { useNotificationStore } from '../stores/notification'
 import { useRouter } from 'vue-router'
+import NotificationDropdown from './NotificationDropdown.vue'
 
 // Get user store and router
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 const router = useRouter()
 
 // Reactive state
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
+const isNotificationDropdownOpen = ref(false)
 
 // Handle scroll events
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
+}
+
+// Toggle notification dropdown
+const toggleNotificationDropdown = () => {
+  isNotificationDropdownOpen.value = !isNotificationDropdownOpen.value
+}
+
+// Handle notification click
+const handleNotificationClick = (notification) => {
+  // Navigate based on notification type
+  switch (notification.type) {
+    case notificationStore.NOTIFICATION_TYPES.CHECK_COMPLETE:
+      router.push('/view-results')
+      break
+    case notificationStore.NOTIFICATION_TYPES.CHECK_START:
+      router.push('/plagiarism-check')
+      break
+    case notificationStore.NOTIFICATION_TYPES.QUEUE_ADD:
+      router.push('/plagiarism-check')
+      break
+    case notificationStore.NOTIFICATION_TYPES.DOCUMENT_UPLOAD:
+      router.push('/documents')
+      break
+    default:
+      break
+  }
 }
 
 // Handle logout
@@ -101,9 +143,51 @@ const handleLogout = async () => {
   }
 }
 
-// Setup scroll event listener
+// On component unmount, remove event listeners
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+
+  // Remove click outside listener
+  document.removeEventListener('click', handleClickOutside)
+})
+
+// Handle click outside for notification dropdown
+const handleClickOutside = (event) => {
+  const notificationDropdown = document.querySelector('.notification-dropdown')
+  const notificationButton = document.querySelector('.notification-button')
+
+  if (
+    isNotificationDropdownOpen.value &&
+    notificationDropdown &&
+    notificationButton &&
+    !notificationDropdown.contains(event.target) &&
+    !notificationButton.contains(event.target)
+  ) {
+    isNotificationDropdownOpen.value = false
+  }
+}
+
+// Setup scroll event listener and fetch notifications
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   handleScroll() // Check initial scroll position
+
+  // Fetch notifications if user is authenticated
+  if (userStore.isAuthenticated) {
+    notificationStore.getNotifications()
+  }
+
+  // Watch for user authentication changes to fetch notifications
+  watch(
+    () => userStore.isAuthenticated,
+    (isAuthenticated) => {
+      if (isAuthenticated) {
+        notificationStore.getNotifications()
+      }
+    },
+  )
+
+  // Add click outside listener to close notification dropdown
+  document.addEventListener('click', handleClickOutside)
 })
 </script>

@@ -178,9 +178,12 @@
 import { ref, onMounted, watch } from 'vue'
 import { User as UserIcon, Camera, AlertCircle, Sun, Moon, Laptop } from 'lucide-vue-next'
 import { useUserStore } from '../stores/user'
+import { useNotificationStore } from '../stores/notification'
 import { uploadAvatar } from '../api/auth'
+import { updateNotificationSettings } from '../api/notifications'
 
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 const uploadingAvatar = ref(false)
 const theme = ref('light') // Default theme
 const language = ref('vi') // Default language
@@ -324,7 +327,16 @@ const changeLanguage = () => {
 }
 
 // Save notification settings
-const saveNotificationSettings = () => {
+const saveNotificationSettings = async () => {
+  // Save to localStorage
   localStorage.setItem('notifications', JSON.stringify(notifications.value))
+
+  // Update notification store settings
+  try {
+    await updateNotificationSettings(notifications.value)
+    console.log('Notification settings updated successfully')
+  } catch (error) {
+    console.error('Failed to update notification settings:', error)
+  }
 }
 </script>
