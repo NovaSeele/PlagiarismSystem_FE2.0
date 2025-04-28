@@ -126,6 +126,16 @@
       </div>
     </div>
 
+    <!-- Progress display panel (new) -->
+    <div v-if="progressMessages.length > 0" class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-lg font-semibold mb-4">Tiến độ xử lý</h2>
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-y-auto max-h-96">
+        <div v-for="(message, index) in progressMessages" :key="index" class="mb-2">
+          <div class="text-sm font-mono text-gray-800">{{ message }}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Error notification -->
     <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
       <div class="flex">
@@ -149,7 +159,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { uploadDocument } from '@/api/documents'
 import { checkAllDocuments, checkDocumentsByNames } from '@/api/plagiarism'
@@ -162,8 +172,11 @@ export default {
     const isLoading = ref(false)
     const error = ref(null)
     const queuedDocuments = ref([])
+    const progressMessages = ref([])
+    const websocket = ref(null)
     const router = useRouter()
 
+    // Handle file change for uploading documents
     const handleFileChange = (event) => {
       const file = event.target.files[0]
       if (file && file.type === 'application/pdf') {
@@ -175,38 +188,58 @@ export default {
       }
     }
 
-    const checkPlagiarism = async () => {
-      if (!selectedFile.value) return
+    // Function to connect to the WebSocket server
+    const connectWebSocket = () => {
+      // Create WebSocket connection
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsHost = import.meta.env.VITE_API_URL || 'localhost:8888'
+      const wsUrl = wsProtocol + '//' + wsHost.replace(/^https?:\/\//, '') + '/ws'
 
-      isLoading.value = true
-      error.value = null
+      websocket.value = new WebSocket(wsUrl)
 
-      try {
-        // Upload the document first
-        await uploadDocument(selectedFile.value)
+      websocket.value.onopen = () => {
+        console.log('WebSocket connection established')
+      }
 
-        // Redirect to results page
-        router.push('/view-results')
-      } catch (err) {
-        console.error('Error checking plagiarism:', err)
-        error.value = 'Có lỗi xảy ra khi kiểm tra đạo văn. Vui lòng thử lại sau.'
-      } finally {
-        isLoading.value = false
+      websocket.value.onmessage = (event) => {
+        progressMessages.value.push(event.data)
+        // Auto-scroll to the bottom of the progress panel
+        setTimeout(() => {
+          const progressPanel = document.querySelector('.max-h-96')
+          if (progressPanel) {
+            progressPanel.scrollTop = progressPanel.scrollHeight
+          }
+        }, 10)
+      }
+
+      websocket.value.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
+
+      websocket.value.onclose = () => {
+        console.log('WebSocket connection closed')
+      }
+
+      return websocket.value
+    }
+
+    // Function to close the WebSocket connection
+    const closeWebSocket = () => {
+      if (websocket.value && websocket.value.readyState === WebSocket.OPEN) {
+        websocket.value.close()
       }
     }
 
-    const loadQueuedDocuments = () => {
-      const queueData = localStorage.getItem('plagiarismCheckQueue')
-      if (queueData) {
-        queuedDocuments.value = JSON.parse(queueData)
-      }
-    }
-
+    // Function to check plagiarism for queued documents
     const checkQueuedDocuments = async () => {
       if (queuedDocuments.value.length === 0) return
 
       isLoading.value = true
       error.value = null
+      progressMessages.value = [] // Clear previous messages
+
+      // Connect to WebSocket
+      connectWebSocket()
 
       try {
         // Extract filenames without .pdf extension
@@ -232,9 +265,14 @@ export default {
       }
     }
 
+    // Function to check plagiarism for all documents
     const checkAllDocuments = async () => {
       isLoading.value = true
       error.value = null
+      progressMessages.value = [] // Clear previous messages
+
+      // Connect to WebSocket
+      connectWebSocket()
 
       try {
         // Call the real API for checking all documents
@@ -253,12 +291,14 @@ export default {
       }
     }
 
+    // Function to remove a document from the queue
     const removeFromQueue = (index) => {
       queuedDocuments.value.splice(index, 1)
       // Update localStorage
       localStorage.setItem('plagiarismCheckQueue', JSON.stringify(queuedDocuments.value))
     }
 
+    // Function to clear the queue
     const clearQueue = () => {
       queuedDocuments.value = []
       localStorage.removeItem('plagiarismCheckQueue')
@@ -273,8 +313,21 @@ export default {
       })
     }
 
+    // Load queued documents from localStorage
+    const loadQueuedDocuments = () => {
+      const queueData = localStorage.getItem('plagiarismCheckQueue')
+      if (queueData) {
+        queuedDocuments.value = JSON.parse(queueData)
+      }
+    }
+
+    // Lifecycle hooks
     onMounted(() => {
       loadQueuedDocuments()
+    })
+
+    onBeforeUnmount(() => {
+      closeWebSocket()
     })
 
     return {
@@ -282,8 +335,9 @@ export default {
       isLoading,
       error,
       queuedDocuments,
+      progressMessages,
       handleFileChange,
-      checkPlagiarism,
+      checkPlagiarism: () => {}, // This method isn't used but kept for reference
       checkQueuedDocuments,
       checkAllDocuments,
       removeFromQueue,
