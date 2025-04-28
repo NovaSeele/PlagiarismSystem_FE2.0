@@ -502,6 +502,7 @@ export default {
       }
     }
 
+    // Function to check plagiarism for queued documents
     const checkQueuedDocuments = async () => {
       if (queuedDocuments.value.length === 0) return
 
@@ -537,6 +538,7 @@ export default {
       }
     }
 
+    // Function to check plagiarism for all documents
     const checkAllDocuments = async () => {
       isLoading.value = true
       error.value = null
@@ -575,6 +577,7 @@ export default {
       localStorage.setItem('plagiarismCheckQueue', JSON.stringify(queuedDocuments.value))
     }
 
+    // Function to clear the queue
     const clearQueue = () => {
       queuedDocuments.value = []
       localStorage.removeItem('plagiarismCheckQueue')
@@ -589,6 +592,15 @@ export default {
       })
     }
 
+    // Load queued documents from localStorage
+    const loadQueuedDocuments = () => {
+      const queueData = localStorage.getItem('plagiarismCheckQueue')
+      if (queueData) {
+        queuedDocuments.value = JSON.parse(queueData)
+      }
+    }
+
+    // Lifecycle hooks
     onMounted(() => {
       loadQueuedDocuments()
       loadProgressMessages()
@@ -609,7 +621,7 @@ export default {
       getPercentage,
       getMessageClass,
       handleFileChange,
-      checkPlagiarism,
+      checkPlagiarism: () => {}, // This method isn't used but kept for reference
       checkQueuedDocuments,
       checkAllDocuments,
       navigateToResults,
