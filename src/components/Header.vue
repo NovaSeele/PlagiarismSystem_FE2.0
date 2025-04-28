@@ -1,17 +1,17 @@
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out border-b bg-white h-16"
+    class="fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out border-b bg-white dark:bg-gray-800 dark:border-gray-700 h-16"
     :class="[isScrolled ? 'shadow-sm' : '']"
   >
     <div class="flex items-center justify-between h-full px-6">
       <div class="flex items-center">
         <button
-          class="btn-ghost btn-icon mr-4 p-2 rounded-lg hover:bg-gray-100"
+          class="btn-ghost btn-icon mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="$emit('toggleSidebar')"
         >
-          <component :is="MenuIcon" :size="18" />
+          <component :is="MenuIcon" :size="18" class="dark:text-gray-200" />
         </button>
-        <router-link to="/" class="text-xl font-medium text-gray-900">
+        <router-link to="/" class="text-xl font-medium text-gray-900 dark:text-white">
           NovaSeele Plagiarism Check
         </router-link>
       </div>
@@ -21,7 +21,7 @@
         <template v-if="!userStore.isAuthenticated">
           <router-link
             to="/login"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-lg border border-gray-300 transition-colors"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-lg border border-gray-300 dark:border-gray-600 transition-colors"
           >
             <LogIn class="w-4 h-4 mr-2" />
             <span>Đăng nhập</span>
@@ -36,8 +36,10 @@
 
         <!-- Authenticated - show notification bell and avatar -->
         <div v-else class="flex items-center space-x-4">
-          <button class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100">
-            <BellIcon :size="20" />
+          <button
+            class="btn-ghost btn-icon relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <BellIcon :size="20" class="dark:text-gray-200" />
             <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
 
@@ -47,14 +49,20 @@
                 v-if="userStore.user && userStore.user.avatar"
                 :src="userStore.user.avatar"
                 :alt="userStore.user.full_name"
-                class="w-8 h-8 rounded-full object-cover border border-gray-200"
+                class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
               />
-              <div v-else class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <UserIcon :size="16" class="text-gray-600" />
+              <div
+                v-else
+                class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center"
+              >
+                <UserIcon :size="16" class="text-gray-600 dark:text-gray-300" />
               </div>
             </router-link>
 
-            <button @click="handleLogout" class="text-sm text-gray-700 hover:text-blue-600">
+            <button
+              @click="handleLogout"
+              class="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+            >
               Đăng xuất
             </button>
           </div>

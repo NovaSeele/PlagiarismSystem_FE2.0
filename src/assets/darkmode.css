@@ -1,0 +1,158 @@
+/* Dark Mode Styles */
+
+/* Base styles */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+/* Background colors */
+.dark .bg-white {
+  background-color: #1f2937;
+}
+
+.dark .bg-gray-50 {
+  background-color: #374151;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f2937;
+}
+
+.dark .bg-blue-50 {
+  background-color: #172554;
+}
+
+.dark .bg-amber-50 {
+  background-color: #451a03;
+}
+
+.dark .bg-red-50 {
+  background-color: #450a0a;
+}
+
+.dark .bg-indigo-50 {
+  background-color: #1e1b4b;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #064e3b;
+}
+
+.dark .bg-cyan-50 {
+  background-color: #083344;
+}
+
+/* Text colors */
+.dark .text-gray-900 {
+  color: #f9fafb;
+}
+
+.dark .text-gray-800 {
+  color: #f3f4f6;
+}
+
+.dark .text-gray-700 {
+  color: #e5e7eb;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af;
+}
+
+/* Border colors */
+.dark .border-gray-100 {
+  border-color: #374151;
+}
+
+.dark .border-gray-200 {
+  border-color: #374151;
+}
+
+.dark .border-blue-200 {
+  border-color: #1e40af;
+}
+
+/* Shadows */
+.dark .shadow,
+.dark .shadow-sm {
+  --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.24);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #374151;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #1f2937;
+}
+
+.dark .hover\:bg-blue-700:hover {
+  background-color: #1d4ed8;
+}
+
+/* Form elements */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .form-checkbox {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+
+/* Buttons with white background */
+.dark button:not(.bg-blue-600):not(.bg-red-600):not(.bg-green-600):not(.bg-yellow-600) {
+  background-color: #374151;
+  color: #f9fafb;
+}
+
+/* Icon colors */
+.dark .text-blue-600 {
+  color: #60a5fa;
+}
+
+.dark .text-amber-600 {
+  color: #fbbf24;
+}
+
+.dark .text-red-600 {
+  color: #f87171;
+}
+
+.dark .text-indigo-600 {
+  color: #818cf8;
+}
+
+.dark .text-emerald-600 {
+  color: #34d399;
+}
+
+.dark .text-cyan-600 {
+  color: #22d3ee;
+}
+
+/* Navigation */
+.dark .router-link-active {
+  background-color: #374151;
+}
+
+.dark .router-link-active:not(.bg-blue-50) {
+  color: #f9fafb;
+}

@@ -12,7 +12,7 @@
         <!-- Content -->
         <main
           :class="[
-            'flex-1 p-4 transition-all duration-300 mt-16 overflow-y-auto', // mt-16 ensures content is below header
+            'flex-1 p-4 transition-all duration-300 mt-16 overflow-y-auto dark:bg-gray-900', // mt-16 ensures content is below header
             isSidebarOpen ? 'ml-64' : 'ml-0',
           ]"
         >
@@ -22,14 +22,14 @@
     </template>
 
     <!-- Full-screen content for auth pages -->
-    <main v-else class="w-full h-full">
+    <main v-else class="w-full h-full dark:bg-gray-900">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
@@ -40,5 +40,18 @@ const isSidebarOpen = ref(true)
 // Check if current route is an authentication page
 const isAuthPage = computed(() => {
   return ['/login', '/register'].includes(route.path)
+})
+
+// Make sure dark mode is applied correctly on component mount
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else if (savedTheme === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (prefersDark) {
+      document.documentElement.classList.add('dark')
+    }
+  }
 })
 </script>

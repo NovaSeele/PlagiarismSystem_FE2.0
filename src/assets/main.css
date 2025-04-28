@@ -1,3 +1,67 @@
+@import './base.css';
+
+:root {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-border: #e5e7eb;
+  --color-accent: #3b82f6;
+}
+
+.dark {
+  --color-bg-primary: #1f2937;
+  --color-bg-secondary: #111827;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-border: #374151;
+  --color-accent: #3b82f6;
+}
+
+/* Ensure the transition is smooth when switching themes */
+body,
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.text-gray-900,
+.text-gray-800,
+.text-gray-700,
+.text-gray-600,
+.text-gray-500,
+.border-gray-100,
+.border-gray-200,
+.shadow,
+.shadow-sm {
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+/* Ensure full height for app container */
+#app {
+  height: 100vh;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
