@@ -133,9 +133,24 @@
       <!-- Active selection info -->
       <div v-if="selectedSection" class="fixed bottom-4 right-4 z-50 shadow-xl">
         <div class="similarity-badge">
-          <div class="flex items-center">
-            <div class="font-bold text-white">
-              Tỉ lệ tương đồng:
+          <div class="flex flex-col w-full">
+            <div class="font-bold text-white mb-1">Tỉ lệ tương đồng của đoạn văn được chọn:</div>
+            <div
+              v-if="
+                Array.isArray(selectedSectionSimilarity) && selectedSectionSimilarity.length > 1
+              "
+              class="flex flex-col space-y-1"
+            >
+              <div
+                v-for="(similarity, index) in selectedSectionSimilarity"
+                :key="index"
+                class="text-white text-sm bg-yellow-600 px-2 py-1 rounded flex justify-between items-center"
+              >
+                <span class="font-medium">Đoạn văn tương đồng {{ index + 1 }}:</span>
+                <span class="font-bold">{{ Number(similarity).toFixed(1) }}%</span>
+              </div>
+            </div>
+            <div v-else class="text-white text-lg font-bold">
               {{
                 Array.isArray(selectedSectionSimilarity)
                   ? Number(selectedSectionSimilarity[0]).toFixed(1)
@@ -666,7 +681,7 @@ const collectSimilarityValues = (sectionIds) => {
 
   // If we still don't have values, as a last resort look in the chunks
   if (uniqueSimilarities.size === 0) {
-    // First check in document 1
+    // Check in document 1
     for (const sectionId of sectionIds) {
       const chunk = doc1Chunks.value.find((c) => c.isHighlighted && c.sectionId === sectionId)
 
@@ -675,23 +690,19 @@ const collectSimilarityValues = (sectionIds) => {
         const value = Math.round(chunk.similarity * 10) / 10
         if (!isNaN(value)) {
           uniqueSimilarities.add(value)
-          break // Only need one value from chunks
         }
       }
     }
 
-    // If no values from doc1, check doc2
-    if (uniqueSimilarities.size === 0) {
-      for (const sectionId of sectionIds) {
-        const chunk = doc2Chunks.value.find((c) => c.isHighlighted && c.sectionId === sectionId)
+    // Check in document 2
+    for (const sectionId of sectionIds) {
+      const chunk = doc2Chunks.value.find((c) => c.isHighlighted && c.sectionId === sectionId)
 
-        if (chunk && typeof chunk.similarity === 'number') {
-          // Round to 1 decimal place for consistency
-          const value = Math.round(chunk.similarity * 10) / 10
-          if (!isNaN(value)) {
-            uniqueSimilarities.add(value)
-            break // Only need one value from chunks
-          }
+      if (chunk && typeof chunk.similarity === 'number') {
+        // Round to 1 decimal place for consistency
+        const value = Math.round(chunk.similarity * 10) / 10
+        if (!isNaN(value)) {
+          uniqueSimilarities.add(value)
         }
       }
     }
@@ -709,50 +720,16 @@ const selectSection = (chunk) => {
   // Update the selected section with ALL related IDs to ensure proper highlighting
   selectedSection.value = allRelatedIds.join('|')
 
-  // For the similarity display, just use the direct similarity from the clicked section
-  if (typeof chunk.similarity === 'number') {
-    selectedSectionSimilarity.value = Math.round(chunk.similarity * 10) / 10
+  // For the similarity display, collect values for ALL related sections
+  const allSimilarityValues = collectSimilarityValues(allRelatedIds)
+
+  // If we have collected similarity values, use them
+  if (allSimilarityValues.length > 0) {
+    selectedSectionSimilarity.value = allSimilarityValues
   } else {
-    // If we don't have a direct similarity value, check if it's a BERT or section ID
-    let sectionSimilarity
-
-    if (chunk.sectionId.startsWith('section-')) {
-      const index = parseInt(chunk.sectionId.split('-')[1])
-      if (
-        !isNaN(index) &&
-        pairDetails.value &&
-        pairDetails.value.all_plagiarized_sections &&
-        pairDetails.value.all_plagiarized_sections[index]
-      ) {
-        sectionSimilarity = pairDetails.value.all_plagiarized_sections[index].similarity_percentage
-      }
-    } else if (chunk.sectionId.startsWith('bert-')) {
-      const index = parseInt(chunk.sectionId.split('-')[1])
-      if (
-        !isNaN(index) &&
-        pairDetails.value &&
-        pairDetails.value.bert_sections &&
-        pairDetails.value.bert_sections[index]
-      ) {
-        sectionSimilarity = pairDetails.value.bert_sections[index].similarity_percentage
-      }
-    }
-
-    // If we found a direct similarity, use it
-    if (sectionSimilarity !== undefined) {
-      selectedSectionSimilarity.value = Math.round(sectionSimilarity * 10) / 10
-    } else {
-      // Otherwise, collect similarity values but only for the clicked section
-      const directSectionId = chunk.sectionId
-      const directSimilarityValues = collectSimilarityValues([directSectionId])
-
-      if (directSimilarityValues.length > 0) {
-        selectedSectionSimilarity.value = directSimilarityValues[0]
-      } else {
-        // Last resort: use the chunk's similarity or 0
-        selectedSectionSimilarity.value = chunk.similarity || 0
-      }
-    }
+    // Fallback to direct similarity from the clicked chunk
+    selectedSectionSimilarity.value =
+      typeof chunk.similarity === 'number' ? [Math.round(chunk.similarity * 10) / 10] : [0]
   }
 
   hoveredSection.value = null
@@ -767,22 +744,17 @@ const selectSectionFromList = (section, index) => {
   // Update selected section with ALL related IDs to ensure proper highlighting
   selectedSection.value = allRelatedIds.join('|')
 
-  // For the similarity display, just use the similarity directly from the section that was clicked
-  const sectionSimilarity = section.similarity_percentage
+  // For the similarity display, collect values for ALL related sections
+  const allSimilarityValues = collectSimilarityValues(allRelatedIds)
 
-  // Use the exact similarity from the clicked section
-  if (typeof sectionSimilarity === 'number') {
-    selectedSectionSimilarity.value = Math.round(sectionSimilarity * 10) / 10
+  // If we have collected similarity values, use them
+  if (allSimilarityValues.length > 0) {
+    selectedSectionSimilarity.value = allSimilarityValues
   } else {
-    // Fall back to collecting value only for this specific section
-    const directSimilarityValues = collectSimilarityValues([sectionId])
-
-    if (directSimilarityValues.length > 0) {
-      selectedSectionSimilarity.value = directSimilarityValues[0]
-    } else {
-      // Last resort: default value
-      selectedSectionSimilarity.value = 0
-    }
+    // Fallback to direct similarity from the section
+    const sectionSimilarity = section.similarity_percentage
+    selectedSectionSimilarity.value =
+      typeof sectionSimilarity === 'number' ? [Math.round(sectionSimilarity * 10) / 10] : [0]
   }
 
   hoveredSection.value = null
@@ -947,11 +919,12 @@ onMounted(() => {
   transition: all 0.3s ease;
   animation: fadeIn 0.3s ease;
   z-index: 100;
-  min-width: 150px;
+  min-width: 200px;
   flex-direction: column;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 300px;
 }
 
 .similarity-badge button {
