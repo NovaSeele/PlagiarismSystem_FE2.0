@@ -359,13 +359,7 @@ const faqs = ref([
   {
     question: 'Hệ thống có thể phát hiện đạo văn bằng nhiều ngôn ngữ khác nhau không?',
     answer:
-      'Hệ thống được tối ưu hóa để phát hiện đạo văn trong tiếng Việt. Nó cũng có khả năng phát hiện đạo văn trong tiếng Anh, nhưng hiệu suất có thể thấp hơn so với tiếng Việt. Hỗ trợ cho các ngôn ngữ khác đang được phát triển.',
-    open: false,
-  },
-  {
-    question: 'Dữ liệu của tôi có được bảo mật không?',
-    answer:
-      'Có, bảo mật là ưu tiên hàng đầu của chúng tôi. Tất cả dữ liệu được mã hóa trong quá trình truyền tải và lưu trữ. Chỉ người dùng được ủy quyền mới có thể truy cập và xem tài liệu của bạn.',
+      'Hệ thống được tối ưu hóa để phát hiện đạo văn trong tiếng Anh. Nó cũng có khả năng phát hiện đạo văn trong tiếng Việt, nhưng hiệu suất có thể thấp hơn so với tiếng Anh. Hỗ trợ cho các ngôn ngữ khác đang được phát triển.',
     open: false,
   },
   {

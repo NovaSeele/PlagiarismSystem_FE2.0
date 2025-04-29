@@ -101,11 +101,8 @@ export const updateMSV = async (msv) => {
   }
 }
 
-export const uploadAvatar = async (file) => {
+export const uploadAvatar = async (formData) => {
   try {
-    const formData = new FormData()
-    formData.append('avatar', file)
-
     const response = await api.post('/upload-avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -113,6 +110,12 @@ export const uploadAvatar = async (file) => {
     })
     return response.data
   } catch (error) {
+    console.error('Upload avatar error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    })
     throw error.response?.data || error.message
   }
 }

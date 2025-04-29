@@ -238,17 +238,43 @@ const handleAvatarChange = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  console.log('Uploading file:', {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  })
+
   uploadingAvatar.value = true
   try {
     const formData = new FormData()
     formData.append('avatar', file)
 
+    // Log formData contents for debugging
+    console.log('FormData created with file:', file.name)
+
     const response = await uploadAvatar(formData)
-    if (response.success) {
-      userStore.setUser({ ...userStore.user, avatar: response.avatar_url })
+    console.log('Avatar upload response:', response)
+
+    // Check for avatar URL in the response
+    if (response && response.avatar) {
+      userStore.setUser({ ...userStore.user, avatar: response.avatar })
+      notificationStore.show({
+        type: 'success',
+        message: 'Ảnh đại diện đã được cập nhật thành công',
+      })
+    } else {
+      console.warn('Avatar URL not found in response:', response)
+      notificationStore.show({
+        type: 'warning',
+        message: 'Cập nhật ảnh đại diện thành công nhưng không thể hiển thị.',
+      })
     }
   } catch (error) {
     console.error('Avatar upload failed:', error)
+    notificationStore.show({
+      type: 'error',
+      message: 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại sau.',
+    })
   } finally {
     uploadingAvatar.value = false
   }

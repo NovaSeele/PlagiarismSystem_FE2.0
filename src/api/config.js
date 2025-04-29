@@ -74,9 +74,27 @@ export const createApiInstance = () => {
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      // Log for debugging
+      console.log('Added auth token to request:', config.url)
+    } else {
+      console.warn('No auth token found for request:', config.url)
     }
     return config
   })
+
+  // Add response interceptor for logging errors
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        console.error('Authentication failed for request:', error.config.url)
+        // You might want to redirect to login page or refresh token
+      } else if (error.response && error.response.status === 422) {
+        console.error('Validation error for request:', error.config.url, error.response.data)
+      }
+      return Promise.reject(error)
+    },
+  )
 
   return api
 }
