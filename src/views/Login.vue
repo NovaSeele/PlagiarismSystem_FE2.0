@@ -13,10 +13,12 @@
               name="email"
               type="text"
               v-model="email"
-              required
               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               placeholder="Email hoặc tên đăng nhập"
             />
+            <div v-if="validationErrors.email" class="text-red-500 text-sm mt-1">
+              {{ validationErrors.email }}
+            </div>
           </div>
           <div>
             <label for="password" class="sr-only">Mật khẩu</label>
@@ -25,10 +27,12 @@
               name="password"
               type="password"
               v-model="password"
-              required
               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               placeholder="Mật khẩu"
             />
+            <div v-if="validationErrors.password" class="text-red-500 text-sm mt-1">
+              {{ validationErrors.password }}
+            </div>
           </div>
         </div>
 
@@ -75,7 +79,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { LogIn } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { login } from '../api/auth'
@@ -95,28 +99,72 @@ export default {
     const rememberMe = ref(false)
     const loading = ref(false)
     const error = ref('')
+    const validationErrors = reactive({
+      email: '',
+      password: '',
+    })
+
+    const validateForm = () => {
+      let isValid = true
+      validationErrors.email = ''
+      validationErrors.password = ''
+
+      if (!email.value.trim()) {
+        validationErrors.email = 'Tên đăng nhập là bắt buộc'
+        isValid = false
+      }
+
+      if (!password.value) {
+        validationErrors.password = 'Mật khẩu là bắt buộc'
+        isValid = false
+      }
+
+      return isValid
+    }
 
     const handleLogin = async () => {
       try {
+        // Validate form fields first
+        if (!validateForm()) {
+          return
+        }
+
         loading.value = true
         error.value = ''
 
+        console.log('Attempting login with:', email.value, '(password hidden)')
+
         const token = await login(email.value, password.value)
+        console.log('Login successful, token received:', token ? 'Yes' : 'No')
+
         if (!token) {
           throw new Error('Login failed. No token received.')
         }
 
         localStorage.setItem('token', token)
-        await userStore.fetchUser()
+        console.log('Token saved to localStorage')
 
-        // Save user data to localStorage for persistence
-        if (userStore.user) {
-          userStore.saveToLocalStorage()
+        try {
+          await userStore.fetchUser()
+          console.log('User data fetched:', userStore.user ? 'Yes' : 'No')
+
+          // Save user data to localStorage for persistence
+          if (userStore.user) {
+            userStore.saveToLocalStorage()
+            console.log('User data saved to localStorage')
+          }
+
+          console.log('Redirecting to homepage...')
+          await router.push('/')
+          console.log('Redirect completed')
+        } catch (fetchError) {
+          console.error('Error after successful login:', fetchError)
+          // Vẫn chuyển hướng ngay cả khi fetch user gặp lỗi
+          console.log('Redirecting to homepage despite fetch error...')
+          await router.push('/')
         }
-
-        router.push('/')
       } catch (err) {
-        error.value = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'
+        error.value = 'Tên đăng nhập hoặc mật khẩu không đúng'
         console.error('Login error:', err)
       } finally {
         loading.value = false
@@ -129,6 +177,7 @@ export default {
       rememberMe,
       loading,
       error,
+      validationErrors,
       handleLogin,
     }
   },

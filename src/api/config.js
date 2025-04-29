@@ -64,6 +64,9 @@ export const fetchNgrokUrl = async () => {
 export const createApiInstance = () => {
   const apiUrl = getApiUrl()
 
+  // Log for debugging
+  console.log('Creating API instance with URL:', apiUrl)
+
   const api = axios.create({
     baseURL: apiUrl,
     withCredentials: true,

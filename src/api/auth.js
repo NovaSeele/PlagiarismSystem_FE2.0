@@ -18,6 +18,31 @@ const MOCK_USER = {
 export const login = async (usernameOrEmail, password) => {
   if (USE_MOCK) {
     console.log('Using mock login')
+
+    // Kiểm tra username và password không được để trống
+    if (!usernameOrEmail || !password) {
+      const error = new Error('Validation error')
+      error.response = {
+        status: 422,
+        data: {
+          detail: !usernameOrEmail ? 'Tên đăng nhập là bắt buộc' : 'Mật khẩu là bắt buộc',
+        },
+      }
+      throw error
+    }
+
+    // Kiểm tra thông tin đăng nhập
+    if (usernameOrEmail !== 'test_user' && password !== 'password123') {
+      const error = new Error('Invalid credentials')
+      error.response = {
+        status: 401,
+        data: {
+          detail: 'Tên đăng nhập hoặc mật khẩu không đúng',
+        },
+      }
+      throw error
+    }
+
     const mockToken = 'mock_token_' + Math.random().toString(36).substring(2)
     localStorage.setItem('token', mockToken)
     return mockToken
@@ -42,6 +67,24 @@ export const login = async (usernameOrEmail, password) => {
   } catch (error) {
     if (error.response) {
       console.error('Login failed:', error.response.data.detail)
+
+      // Đảm bảo format lỗi đúng với kỳ vọng của test
+      if (error.response.status === 422) {
+        // Validation error
+        const fieldErrors = error.response.data.detail || []
+
+        // Tìm lỗi liên quan đến username hoặc password
+        const usernameError = fieldErrors.find((e) => e.loc.includes('username'))
+        const passwordError = fieldErrors.find((e) => e.loc.includes('password'))
+
+        if (usernameError) {
+          error.message = 'Tên đăng nhập là bắt buộc'
+        } else if (passwordError) {
+          error.message = 'Mật khẩu là bắt buộc'
+        }
+      } else if (error.response.status === 401) {
+        error.message = 'Tên đăng nhập hoặc mật khẩu không đúng'
+      }
     } else {
       console.error('Error occurred during login:', error.message)
     }

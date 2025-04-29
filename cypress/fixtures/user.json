@@ -1,0 +1,15 @@
+{
+  "validUser": {
+    "username": "test_user",
+    "password": "password123",
+    "token": {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X3VzZXIiLCJpYXQiOjE2MTYyMzkwMjJ9.fake-signature",
+      "token_type": "bearer",
+      "expires_in": 3600
+    }
+  },
+  "invalidUser": {
+    "username": "invalid_user",
+    "password": "wrong_password"
+  }
+}

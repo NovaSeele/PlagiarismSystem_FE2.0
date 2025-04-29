@@ -12,6 +12,8 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:unit:ui": "vitest --ui",
     "test:unit:watch": "vitest watch",
+    "test:e2e": "cypress open",
+    "test:e2e:run": "cypress run",
     "format": "prettier --write src/"
   },
   "dependencies": {
@@ -25,10 +27,11 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitejs/plugin-vue-jsx": "^4.1.1",
-    "@vitest/coverage-v8": "^3.0.9",
+    "@vitest/coverage-v8": "^3.0.8",
     "@vitest/ui": "^3.0.8",
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.21",
+    "cypress": "^13.10.0",
     "jsdom": "^26.0.0",
     "postcss": "^8.5.3",
     "prettier": "3.5.3",
