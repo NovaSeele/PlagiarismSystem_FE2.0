@@ -1,0 +1,85 @@
+{
+  "document_count": 3,
+  "execution_time_seconds": 12.5,
+  "summary": {
+    "total_pairs": 3,
+    "final_result_count": 2
+  },
+  "all_document_pairs": [
+    {
+      "doc1_filename": "document1.pdf",
+      "doc2_filename": "document2.pdf",
+      "bert_similarity_percentage": 85,
+      "fasttext_similarity_percentage": 77,
+      "lsa_similarity_percentage": 70,
+      "final_result": true,
+      "doc1_content": "Đây là nội dung của tài liệu thứ nhất. Phần này có trùng lặp với tài liệu thứ hai. Nội dung này sẽ được tô sáng khi hiển thị chi tiết.",
+      "doc2_content": "Đây là nội dung của tài liệu thứ hai. Phần này có trùng lặp với tài liệu thứ nhất. Nội dung này sẽ được tô sáng khi hiển thị chi tiết.",
+      "bert_sections": [
+        {
+          "doc1_content": "Phần này có trùng lặp với tài liệu thứ hai",
+          "doc2_content": "Phần này có trùng lặp với tài liệu thứ nhất",
+          "similarity_percentage": 85
+        }
+      ],
+      "all_plagiarized_sections": [
+        {
+          "doc1_content": "Phần này có trùng lặp với tài liệu thứ hai",
+          "doc2_content": "Phần này có trùng lặp với tài liệu thứ nhất",
+          "similarity_percentage": 85,
+          "detection_layer": "bert"
+        }
+      ]
+    },
+    {
+      "doc1_filename": "document1.pdf",
+      "doc2_filename": "document3.pdf",
+      "bert_similarity_percentage": 35,
+      "fasttext_similarity_percentage": 42,
+      "lsa_similarity_percentage": 30,
+      "final_result": false,
+      "doc1_content": "Đây là nội dung của tài liệu thứ nhất. Nội dung này không trùng lặp nhiều với tài liệu thứ ba.",
+      "doc2_content": "Đây là nội dung của tài liệu thứ ba. Chỉ có một phần nhỏ tương đồng với tài liệu thứ nhất.",
+      "bert_sections": [
+        {
+          "doc1_content": "tài liệu thứ nhất",
+          "doc2_content": "tài liệu thứ nhất",
+          "similarity_percentage": 100
+        }
+      ],
+      "all_plagiarized_sections": [
+        {
+          "doc1_content": "tài liệu thứ nhất",
+          "doc2_content": "tài liệu thứ nhất",
+          "similarity_percentage": 100,
+          "detection_layer": "bert"
+        }
+      ]
+    },
+    {
+      "doc1_filename": "document2.pdf",
+      "doc2_filename": "document3.pdf",
+      "bert_similarity_percentage": 65,
+      "fasttext_similarity_percentage": 60,
+      "lsa_similarity_percentage": 58,
+      "final_result": true,
+      "doc1_content": "Đây là nội dung của tài liệu thứ hai. Có một số phần tương đồng với tài liệu thứ ba.",
+      "doc2_content": "Đây là nội dung của tài liệu thứ ba. Có một số phần tương đồng với tài liệu thứ hai.",
+      "bert_sections": [
+        {
+          "doc1_content": "Có một số phần tương đồng với tài liệu thứ ba",
+          "doc2_content": "Có một số phần tương đồng với tài liệu thứ hai",
+          "similarity_percentage": 85
+        }
+      ],
+      "all_plagiarized_sections": [
+        {
+          "doc1_content": "Có một số phần tương đồng với tài liệu thứ ba",
+          "doc2_content": "Có một số phần tương đồng với tài liệu thứ hai",
+          "similarity_percentage": 85,
+          "detection_layer": "bert"
+        }
+      ]
+    }
+  ]
+}
