@@ -1,5 +1,8 @@
 <template>
   <div class="flex h-screen overflow-hidden">
+    <!-- Global notification container -->
+    <NotificationContainer />
+
     <!-- Only show sidebar and header if not on login or register pages -->
     <template v-if="!isAuthPage">
       <!-- Sidebar -->

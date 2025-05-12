@@ -84,6 +84,7 @@ import { LogIn } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { login } from '../api/auth'
 import { useUserStore } from '../stores/user'
+import { useNotification } from '../plugins/notification'
 
 export default {
   name: 'Login',
@@ -93,6 +94,7 @@ export default {
   setup() {
     const router = useRouter()
     const userStore = useUserStore()
+    const notify = useNotification()
 
     const email = ref('')
     const password = ref('')
@@ -134,15 +136,23 @@ export default {
 
         console.log('Attempting login with:', email.value, '(password hidden)')
 
-        const token = await login(email.value, password.value)
-        console.log('Login successful, token received:', token ? 'Yes' : 'No')
+        // Login without specifying role - let the backend determine the role
+        const loginResponse = await login(email.value, password.value)
+        console.log('Login successful, token received:', loginResponse?.token ? 'Yes' : 'No')
 
-        if (!token) {
+        if (!loginResponse || !loginResponse.token) {
           throw new Error('Login failed. No token received.')
         }
 
-        localStorage.setItem('token', token)
-        console.log('Token saved to localStorage')
+        // Save token and role from server
+        localStorage.setItem('token', loginResponse.token)
+
+        // Save the role returned from server
+        if (loginResponse.role) {
+          localStorage.setItem('userRole', loginResponse.role)
+        }
+
+        console.log('Token and role saved to localStorage')
 
         try {
           await userStore.fetchUser()
@@ -154,6 +164,7 @@ export default {
             console.log('User data saved to localStorage')
           }
 
+          notify.success('Đăng nhập thành công!')
           console.log('Redirecting to homepage...')
           await router.push('/')
           console.log('Redirect completed')
@@ -165,6 +176,7 @@ export default {
         }
       } catch (err) {
         error.value = 'Tên đăng nhập hoặc mật khẩu không đúng'
+        notify.error(error.value)
         console.error('Login error:', err)
       } finally {
         loading.value = false

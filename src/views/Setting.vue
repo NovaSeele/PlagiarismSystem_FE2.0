@@ -60,6 +60,20 @@
           <div v-if="userStore.user && userStore.user.msv" class="text-sm text-gray-500">
             Mã sinh viên: {{ userStore.user.msv }}
           </div>
+          <!-- Display user role -->
+          <div class="text-sm mt-2 inline-flex items-center">
+            <span class="mr-2 text-gray-500">Vai trò:</span>
+            <span
+              class="px-2 py-1 text-xs rounded-full font-medium"
+              :class="{
+                'bg-blue-100 text-blue-800': userStore.isLecturer,
+                'bg-green-100 text-green-800': userStore.isStudent,
+                'bg-purple-100 text-purple-800': userStore.isGuest,
+              }"
+            >
+              {{ getUserRoleDisplay() }}
+            </span>
+          </div>
           <div class="mt-2 text-xs text-gray-500">Hover vào ảnh đại diện để thay đổi</div>
         </div>
       </div>
@@ -175,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { User as UserIcon, Camera, AlertCircle, Sun, Moon, Laptop } from 'lucide-vue-next'
 import { useUserStore } from '../stores/user'
 import { useNotificationStore } from '../stores/notification'
@@ -192,6 +206,14 @@ const notifications = ref({
   plagiarismDetected: true,
   newDocument: false,
 })
+
+// Function to get user role display text
+const getUserRoleDisplay = () => {
+  if (userStore.isLecturer) return 'Giảng viên'
+  if (userStore.isStudent) return 'Học sinh'
+  if (userStore.isGuest) return 'Khách'
+  return 'Không xác định'
+}
 
 // Load saved settings on component mount
 onMounted(() => {

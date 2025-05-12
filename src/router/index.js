@@ -11,6 +11,7 @@ import Setting from '../views/Setting.vue'
 import ViewResultDetails from '../views/ViewResultDetails.vue'
 import Help from '../views/Help.vue'
 import Notifications from '../views/Notifications.vue'
+import NotificationDemo from '../components/NotificationDemo.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -24,6 +25,7 @@ const routes = [
   { path: '/settings', name: 'Settings', component: Setting },
   { path: '/help', name: 'Help', component: Help },
   { path: '/notifications', name: 'Notifications', component: Notifications },
+  { path: '/notification-demo', name: 'NotificationDemo', component: NotificationDemo },
   {
     path: '/view-result-details/:file1/:file2',
     name: 'ViewResultDetails',

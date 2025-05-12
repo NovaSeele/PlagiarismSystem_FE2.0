@@ -99,6 +99,22 @@
             <component :is="Settings" :size="20" />
             <span class="ml-3">Cài đặt</span>
           </router-link>
+
+          <router-link
+            to="/notification-demo"
+            :class="`
+              flex items-center px-4 py-3 my-1 rounded-lg transition-all duration-200
+              ${
+                $route.path === '/notification-demo'
+                  ? 'bg-gray-100 dark:bg-gray-700 text-primary dark:text-blue-400 font-medium'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }
+            `"
+          >
+            <component :is="Bell" :size="20" />
+            <span class="ml-3">Demo Thông báo</span>
+          </router-link>
+
           <router-link
             to="/help"
             :class="`
@@ -135,6 +151,7 @@ import {
   Settings,
   HelpCircle,
   LibraryBig,
+  Bell,
 } from 'lucide-vue-next'
 
 defineProps({

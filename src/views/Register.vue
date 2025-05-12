@@ -79,6 +79,48 @@
           </div>
         </div>
 
+        <!-- Role Selection -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Vai trò của bạn</label>
+          <div class="flex space-x-4">
+            <div class="flex items-center">
+              <input
+                id="role-student"
+                name="role"
+                type="radio"
+                value="student"
+                v-model="selectedRole"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              />
+              <label for="role-student" class="ml-2 block text-sm text-gray-700"> Học sinh </label>
+            </div>
+            <div class="flex items-center">
+              <input
+                id="role-lecturer"
+                name="role"
+                type="radio"
+                value="lecturer"
+                v-model="selectedRole"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              />
+              <label for="role-lecturer" class="ml-2 block text-sm text-gray-700">
+                Giảng viên
+              </label>
+            </div>
+            <div class="flex items-center">
+              <input
+                id="role-guest"
+                name="role"
+                type="radio"
+                value="guest"
+                v-model="selectedRole"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              />
+              <label for="role-guest" class="ml-2 block text-sm text-gray-700"> Khách </label>
+            </div>
+          </div>
+        </div>
+
         <div v-if="error" class="text-red-500 text-sm text-center">
           {{ error }}
         </div>
@@ -111,6 +153,7 @@ import { ref } from 'vue'
 import { User } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { register } from '../api/auth'
+import { useNotification } from '../plugins/notification'
 
 export default {
   name: 'Register',
@@ -119,6 +162,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const notify = useNotification()
     const username = ref('')
     const fullName = ref('')
     const email = ref('')
@@ -127,6 +171,7 @@ export default {
     const confirmPassword = ref('')
     const loading = ref(false)
     const error = ref('')
+    const selectedRole = ref('student') // Default to student
 
     const handleRegister = async () => {
       try {
@@ -143,6 +188,7 @@ export default {
           email: email.value,
           full_name: fullName.value,
           password: password.value,
+          role: selectedRole.value,
         }
 
         if (msv.value) {
@@ -150,9 +196,11 @@ export default {
         }
 
         await register(userData)
+        notify.success('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.')
         router.push('/login')
       } catch (err) {
         error.value = err.message || 'Đăng ký thất bại. Vui lòng thử lại.'
+        notify.error(error.value)
       } finally {
         loading.value = false
       }
@@ -167,6 +215,7 @@ export default {
       confirmPassword,
       loading,
       error,
+      selectedRole,
       handleRegister,
     }
   },

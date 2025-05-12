@@ -11,14 +11,19 @@
           <Trash2 class="w-5 h-5 mr-2" />
           Xoá {{ selectedDocuments.length }} tài liệu đã chọn
         </button>
-        <button
-          v-if="selectedDocuments.length > 0"
-          class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          @click="addToQueue"
-        >
-          <FileSearch class="w-5 h-5 mr-2" />
-          Thêm {{ selectedDocuments.length }} vào kiểm tra đạo văn
-        </button>
+
+        <!-- Add to plagiarism check - only for lecturers -->
+        <RoleBasedElement required-role="lecturer">
+          <button
+            v-if="selectedDocuments.length > 0"
+            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            @click="addToQueue"
+          >
+            <FileSearch class="w-5 h-5 mr-2" />
+            Thêm {{ selectedDocuments.length }} vào kiểm tra đạo văn
+          </button>
+        </RoleBasedElement>
+
         <button
           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           @click="handleUpload"
@@ -29,28 +34,6 @@
       </div>
       <input type="file" ref="fileInput" accept=".pdf" class="hidden" @change="onFileSelected" />
     </div>
-
-    <!-- Categories -->
-    <!-- <div class="mb-6">
-      <div class="flex flex-wrap gap-2">
-        <button
-          @click="selectedCategory = null"
-          class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          :class="!selectedCategory ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-        >
-          Tất cả
-        </button>
-        <button
-          v-for="category in uniqueCategories"
-          :key="category"
-          @click="selectedCategory = category"
-          class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          :class="selectedCategory === category ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-        >
-          {{ category }}
-        </button>
-      </div>
-    </div> -->
 
     <!-- Search -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -134,6 +117,18 @@
               <p class="text-sm text-gray-600 mb-4">
                 Uploaded by {{ doc.user }} on {{ formatDate(doc.upload_at) }}
               </p>
+
+              <!-- Role badge for this document's owner - only visible to lecturers -->
+              <RoleBasedElement required-role="lecturer">
+                <div class="mb-2">
+                  <span
+                    class="px-2 py-1 bg-blue-100 text-xs font-medium text-blue-600 rounded-full"
+                  >
+                    {{ doc.role || 'student' }}
+                  </span>
+                </div>
+              </RoleBasedElement>
+
               <!-- <div class="flex flex-wrap gap-2">
                 <span
                   v-for="category in doc.categories"
@@ -157,118 +152,140 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Search, Upload, FileText, FileSearch, Trash2 } from 'lucide-vue-next'
-import { getAllDocuments, uploadDocument, deleteMultipleDocuments } from '../api/documents'
+import { Trash2, Upload, Search, FileSearch, FileText } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import RoleBasedElement from '../components/RoleBasedElement.vue'
+import { useUserStore } from '../stores/user'
+import { useNotification } from '../plugins/notification'
+import { getAllDocuments, uploadDocument, deleteDocument } from '../api/documents'
+
+const router = useRouter()
+const userStore = useUserStore()
+const notify = useNotification()
 
 const documents = ref([])
 const searchQuery = ref('')
-// const selectedCategory = ref(null);
 const fileInput = ref(null)
 const selectedDocuments = ref([])
 const showDeleteModal = ref(false)
-const isDeleting = ref(false)
-const router = useRouter()
+const loading = ref(false)
 
-// Fetch documents
-const fetchDocuments = async () => {
+// Fetch documents from API
+async function fetchDocuments() {
+  loading.value = true
   try {
-    documents.value = await getAllDocuments()
+    const data = await getAllDocuments()
+    documents.value = data
   } catch (error) {
     console.error('Error fetching documents:', error)
+    notify.error('Failed to load documents. Please try again later.')
+    documents.value = [] // Set to empty array to prevent rendering issues
+  } finally {
+    loading.value = false
   }
 }
 
-// Handle file upload button click
-const handleUpload = () => {
+// Filter documents based on search query
+const filteredDocuments = computed(() => {
+  if (!searchQuery.value) return documents.value
+
+  const query = searchQuery.value.toLowerCase()
+  return documents.value.filter(
+    (doc) =>
+      doc.filename?.toLowerCase().includes(query) || doc.content?.toLowerCase().includes(query),
+  )
+})
+
+// Handle file upload
+function handleUpload() {
   fileInput.value.click()
 }
 
-// Handle file selection
-const onFileSelected = async (event) => {
+// Process selected file
+async function onFileSelected(event) {
   const file = event.target.files[0]
   if (!file) return
 
+  loading.value = true
   try {
     await uploadDocument(file)
-    await fetchDocuments() // Refresh the documents list
+    await fetchDocuments()
+    notify.success('Document uploaded successfully')
   } catch (error) {
-    console.error('Error uploading file:', error)
+    console.error('Error uploading document:', error)
+    notify.error('Failed to upload document. Please try again.')
+  } finally {
+    loading.value = false
+    // Reset file input
+    fileInput.value.value = null
   }
 }
 
-// Confirm delete selected documents
-const confirmDelete = () => {
-  if (selectedDocuments.value.length > 0) {
-    showDeleteModal.value = true
-  }
+// Confirm deletion
+function confirmDelete() {
+  showDeleteModal.value = true
 }
 
 // Delete selected documents
-const deleteSelected = async () => {
-  if (isDeleting.value) return // Prevent multiple clicks
-
-  isDeleting.value = true
+async function deleteSelected() {
+  loading.value = true
   try {
     const documentIds = selectedDocuments.value.map((doc) => doc._id)
-    await deleteMultipleDocuments(documentIds)
 
-    // Clear selection and close modal
-    selectedDocuments.value = []
-    showDeleteModal.value = false
+    // Use Promise.all to delete multiple documents
+    await Promise.all(documentIds.map((id) => deleteDocument(id)))
 
-    // Refresh documents list
     await fetchDocuments()
+    selectedDocuments.value = []
+    notify.success('Documents deleted successfully')
   } catch (error) {
     console.error('Error deleting documents:', error)
+    notify.error('Failed to delete documents. Please try again.')
   } finally {
-    isDeleting.value = false
+    loading.value = false
+    showDeleteModal.value = false
   }
 }
 
-// Get unique categories
-// const uniqueCategories = computed(() => {
-//   const categories = new Set();
-//   documents.value.forEach(doc => {
-//     doc.categories.forEach(category => categories.add(category));
-//   });
-//   return Array.from(categories);
-// });
+// Add selected documents to plagiarism check (lecturer only)
+async function addToQueue() {
+  if (!userStore.isLecturer) {
+    notify.error('Only lecturers can access this feature')
+    return
+  }
 
-// Filter documents based on search and category
-const filteredDocuments = computed(() => {
-  return documents.value.filter((doc) => {
-    const matchesSearch =
-      searchQuery.value === '' ||
-      doc.filename.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      doc.content.toLowerCase().includes(searchQuery.value.toLowerCase())
+  loading.value = true
+  try {
+    const documentIds = selectedDocuments.value.map((doc) => doc._id)
+    const response = await fetch('/api/plagiarism/queue-documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids: documentIds }),
+    })
 
-    // const matchesCategory = !selectedCategory.value ||
-    //   doc.categories.includes(selectedCategory.value);
+    if (!response.ok) throw new Error('Failed to add documents to plagiarism check')
 
-    return matchesSearch // && matchesCategory;
-  })
-})
-
-// Format date
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+    notify.success('Documents added to plagiarism check queue')
+    // Navigate to plagiarism check page
+    router.push('/plagiarism-check')
+  } catch (error) {
+    console.error('Error adding to plagiarism check:', error)
+    notify.error('Failed to add documents to plagiarism check. Please try again.')
+  } finally {
+    loading.value = false
+  }
 }
 
-// Add selected documents to plagiarism check queue
-const addToQueue = () => {
-  // Store selected documents in localStorage
-  localStorage.setItem('plagiarismCheckQueue', JSON.stringify(selectedDocuments.value))
-
-  // Navigate to plagiarism check page
-  router.push('/plagiarism-check')
-
-  // Clear selection after adding to queue
-  selectedDocuments.value = []
+// Format date
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('vi-VN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
 }
 
 onMounted(() => {
