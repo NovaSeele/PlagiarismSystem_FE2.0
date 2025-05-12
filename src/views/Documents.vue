@@ -5,6 +5,14 @@
       <div class="flex space-x-3">
         <button
           v-if="selectedDocuments.length > 0"
+          class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          @click="confirmDelete"
+        >
+          <Trash2 class="w-5 h-5 mr-2" />
+          Xoá {{ selectedDocuments.length }} tài liệu đã chọn
+        </button>
+        <button
+          v-if="selectedDocuments.length > 0"
           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           @click="addToQueue"
         >
@@ -54,6 +62,34 @@
           placeholder="Tìm kiếm tài liệu..."
           class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <h3 class="text-xl font-bold mb-4">Xác nhận xoá</h3>
+        <p class="mb-6">
+          Bạn có chắc chắn muốn xoá {{ selectedDocuments.length }} tài liệu đã chọn? Hành động này
+          không thể hoàn tác.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+            @click="showDeleteModal = false"
+          >
+            Huỷ
+          </button>
+          <button
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            @click="deleteSelected"
+          >
+            Xoá
+          </button>
+        </div>
       </div>
     </div>
 
@@ -121,8 +157,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Search, Upload, FileText, FileSearch } from 'lucide-vue-next'
-import { getAllDocuments, uploadDocument } from '../api/documents'
+import { Search, Upload, FileText, FileSearch, Trash2 } from 'lucide-vue-next'
+import { getAllDocuments, uploadDocument, deleteMultipleDocuments } from '../api/documents'
 import { useRouter } from 'vue-router'
 
 const documents = ref([])
@@ -130,6 +166,8 @@ const searchQuery = ref('')
 // const selectedCategory = ref(null);
 const fileInput = ref(null)
 const selectedDocuments = ref([])
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
 const router = useRouter()
 
 // Fetch documents
@@ -156,6 +194,35 @@ const onFileSelected = async (event) => {
     await fetchDocuments() // Refresh the documents list
   } catch (error) {
     console.error('Error uploading file:', error)
+  }
+}
+
+// Confirm delete selected documents
+const confirmDelete = () => {
+  if (selectedDocuments.value.length > 0) {
+    showDeleteModal.value = true
+  }
+}
+
+// Delete selected documents
+const deleteSelected = async () => {
+  if (isDeleting.value) return // Prevent multiple clicks
+
+  isDeleting.value = true
+  try {
+    const documentIds = selectedDocuments.value.map((doc) => doc._id)
+    await deleteMultipleDocuments(documentIds)
+
+    // Clear selection and close modal
+    selectedDocuments.value = []
+    showDeleteModal.value = false
+
+    // Refresh documents list
+    await fetchDocuments()
+  } catch (error) {
+    console.error('Error deleting documents:', error)
+  } finally {
+    isDeleting.value = false
   }
 }
 

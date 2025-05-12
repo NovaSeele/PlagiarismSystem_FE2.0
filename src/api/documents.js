@@ -43,3 +43,25 @@ export const uploadDocument = async (file) => {
     throw error
   }
 }
+
+// Delete document
+export const deleteDocument = async (documentId) => {
+  try {
+    const response = await api.delete(`/delete_pdf/${documentId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error deleting document:', error)
+    throw error
+  }
+}
+
+// Delete multiple documents
+export const deleteMultipleDocuments = async (documentIds) => {
+  try {
+    const results = await Promise.all(documentIds.map(id => deleteDocument(id)))
+    return results
+  } catch (error) {
+    console.error('Error deleting multiple documents:', error)
+    throw error
+  }
+}
