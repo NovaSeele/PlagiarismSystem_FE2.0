@@ -12,7 +12,7 @@
           <component :is="MenuIcon" :size="18" class="dark:text-gray-200" />
         </button>
         <router-link to="/" class="text-xl font-medium text-gray-900 dark:text-white">
-          NovaSeele Plagiarism Check
+          A System for Monitoring and Preventing Plagiarism in University Student Submissions.
         </router-link>
       </div>
 

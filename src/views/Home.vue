@@ -1,9 +1,9 @@
 <template>
   <div class="flex-1">
     <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">Chào mừng đến với hệ thống kiểm tra đạo văn</h1>
+      <h1 class="text-2xl font-bold text-gray-900">Hệ thống kiểm tra đạo văn chéo nội bộ cho bài tập của sinh viên đại học.</h1>
       <p class="text-gray-600 mt-2">
-        Hệ thống cung cấp công cụ phát hiện đạo văn hiệu quả, chính xác và dễ sử dụng
+        Credit: NovaSeele
       </p>
     </div>
 

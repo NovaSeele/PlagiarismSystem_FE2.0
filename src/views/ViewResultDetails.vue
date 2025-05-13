@@ -53,6 +53,44 @@
       </div>
     </div>
 
+    <!-- No Results State -->
+    <div v-else-if="!pairDetails" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+      <div class="flex items-center">
+        <svg
+          class="h-6 w-6 text-yellow-500 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <h3 class="text-lg font-medium text-yellow-800">Không tìm thấy kết quả so sánh</h3>
+      </div>
+      <div class="mt-2 text-sm text-yellow-700">
+        Không tìm thấy kết quả so sánh giữa hai tài liệu được chọn. Vui lòng kiểm tra lại tên tài
+        liệu hoặc thử so sánh lại.
+      </div>
+      <div class="mt-4">
+        <button
+          @click="goBackToResults"
+          class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+        >
+          Quay lại trang kết quả
+        </button>
+        <button
+          @click="retryComparison"
+          class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+    </div>
+
     <div v-else-if="pairDetails" class="space-y-4">
       <!-- Navigation and Summary Header -->
       <div class="flex items-center justify-between">
@@ -178,6 +216,23 @@
         </div>
       </div>
 
+      <!-- Add Content Length Control -->
+      <!-- <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div class="text-sm">
+            <span class="text-gray-600 font-medium"> Tài liệu được hiển thị đầy đủ. </span>
+          </div>
+          <div class="flex gap-2">
+            <button
+              @click="toggleHighlightsOnly"
+              class="px-4 py-2 bg-amber-500 text-white text-sm rounded-md hover:bg-amber-600"
+            >
+              {{ showHighlightsOnly ? 'Hiển thị toàn bộ văn bản' : 'Chỉ hiển thị đoạn trùng lặp' }}
+            </button>
+          </div>
+        </div>
+      </div> -->
+
       <!-- Documents Comparison -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Document 1 -->
@@ -187,7 +242,7 @@
           </h2>
           <div class="prose max-w-none mt-4 text-sm" ref="doc1Content">
             <p class="text-gray-700 leading-relaxed whitespace-pre-line">
-              <template v-for="(chunk, index) in doc1Chunks" :key="index">
+              <template v-for="(chunk, index) in getVisibleDoc1Chunks()" :key="index">
                 <span
                   v-if="chunk.isHighlighted"
                   class="highlighted-text cursor-pointer"
@@ -205,7 +260,10 @@
                 >
                   {{ chunk.text }}
                 </span>
-                <span v-else>{{ chunk.text }}</span>
+                <span v-else-if="!showHighlightsOnly">{{ chunk.text }}</span>
+                <span v-else-if="showHighlightsOnly && chunk.isContext" class="text-gray-400">{{
+                  chunk.text
+                }}</span>
               </template>
             </p>
           </div>
@@ -218,7 +276,7 @@
           </h2>
           <div class="prose max-w-none mt-4 text-sm" ref="doc2Content">
             <p class="text-gray-700 leading-relaxed whitespace-pre-line">
-              <template v-for="(chunk, index) in doc2Chunks" :key="index">
+              <template v-for="(chunk, index) in getVisibleDoc2Chunks()" :key="index">
                 <span
                   v-if="chunk.isHighlighted"
                   class="highlighted-text cursor-pointer"
@@ -236,7 +294,10 @@
                 >
                   {{ chunk.text }}
                 </span>
-                <span v-else>{{ chunk.text }}</span>
+                <span v-else-if="!showHighlightsOnly">{{ chunk.text }}</span>
+                <span v-else-if="showHighlightsOnly && chunk.isContext" class="text-gray-400">{{
+                  chunk.text
+                }}</span>
               </template>
             </p>
           </div>
@@ -250,7 +311,7 @@
         <div class="mb-4">
           <div class="flex gap-2 items-center">
             <span class="inline-block h-3 w-3 bg-green-200 border border-green-400 rounded"></span>
-            <span class="text-sm">BERT Match</span>
+            <span class="text-sm">Chi tiết</span>
           </div>
         </div>
 
@@ -301,7 +362,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { comparePdfsByName } from '../api/plagiarism'
 
@@ -315,6 +376,30 @@ const selectedSectionSimilarity = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
+// Simplify content display controls
+// Remove maxChars, defaultMaxChars, isTruncated variables
+const showHighlightsOnly = ref(false) // Only keep this option
+const contextChars = 100 // Keep this for context around highlights
+
+// Thêm lại computed properties cơ bản cho doc1Chunks và doc2Chunks
+const doc1Chunks = computed(() => {
+  if (!pairDetails.value) return []
+  return processDocumentContent(
+    pairDetails.value.doc1_content,
+    pairDetails.value.bert_sections || [],
+    true,
+  )
+})
+
+const doc2Chunks = computed(() => {
+  if (!pairDetails.value) return []
+  return processDocumentContent(
+    pairDetails.value.doc2_content,
+    pairDetails.value.bert_sections || [],
+    false,
+  )
+})
+
 // Fetch data using the API
 const fetchPairDetails = async () => {
   try {
@@ -325,6 +410,8 @@ const fetchPairDetails = async () => {
     const file1 = route.params.file1
     const file2 = route.params.file2
 
+    console.log('Đang so sánh file:', file1, file2)
+
     if (!file1 || !file2) {
       throw new Error('Missing file names in URL parameters')
     }
@@ -333,13 +420,29 @@ const fetchPairDetails = async () => {
     const file1Name = file1.endsWith('.pdf') ? file1.slice(0, -4) : file1
     const file2Name = file2.endsWith('.pdf') ? file2.slice(0, -4) : file2
 
+    console.log('Gọi API so sánh PDF:', file1Name, file2Name)
+
     // Call the API to get comparison results
     const response = await comparePdfsByName(file1Name, file2Name)
 
+    console.log('API response:', response)
+
     // The API returns the whole result object, but we need the first pair in all_document_pairs
     if (response.all_document_pairs && response.all_document_pairs.length > 0) {
+      console.log('Tìm thấy cặp tài liệu:', response.all_document_pairs[0])
       pairDetails.value = response.all_document_pairs[0]
+
+      // Verify data format
+      console.log('Kiểm tra cấu trúc dữ liệu:')
+      console.log('- doc1_content:', !!pairDetails.value.doc1_content?.length)
+      console.log('- doc2_content:', !!pairDetails.value.doc2_content?.length)
+      console.log('- bert_sections:', !!pairDetails.value.bert_sections?.length)
+      console.log(
+        '- all_plagiarized_sections:',
+        !!pairDetails.value.all_plagiarized_sections?.length,
+      )
     } else {
+      console.warn('Không tìm thấy cặp tài liệu nào:', response)
       throw new Error('No comparison results found')
     }
   } catch (err) {
@@ -358,7 +461,7 @@ const bertPlagiarizedSections = computed(() => {
   )
 })
 
-// Process document content for highlighting
+// Process document content with optimization for highlighting
 const processDocumentContent = (content, sections, isDoc1) => {
   if (!content) return []
 
@@ -492,27 +595,62 @@ const processDocumentContent = (content, sections, isDoc1) => {
     })
   }
 
+  // Add context markers to chunks for "highlights only" mode
+  if (showHighlightsOnly.value) {
+    // For each highlighted chunk, mark preceding and following text as context
+    const newChunks = []
+    for (let i = 0; i < chunks.length; i++) {
+      if (chunks[i].isHighlighted) {
+        // Find preceding non-highlighted chunk and mark as context
+        if (i > 0 && !chunks[i - 1].isHighlighted) {
+          const text = chunks[i - 1].text
+          const contextText =
+            text.length <= contextChars * 2
+              ? text
+              : '...' + text.substring(text.length - contextChars)
+
+          newChunks.push({
+            text: contextText,
+            isHighlighted: false,
+            isContext: true,
+          })
+        }
+
+        // Add the highlighted chunk
+        newChunks.push(chunks[i])
+
+        // Find following non-highlighted chunk and mark as context
+        if (i < chunks.length - 1 && !chunks[i + 1].isHighlighted) {
+          const text = chunks[i + 1].text
+          const contextText =
+            text.length <= contextChars * 2 ? text : text.substring(0, contextChars) + '...'
+
+          newChunks.push({
+            text: contextText,
+            isHighlighted: false,
+            isContext: true,
+          })
+        }
+      } else if (!showHighlightsOnly.value) {
+        newChunks.push(chunks[i])
+      }
+    }
+
+    return newChunks
+  }
+
   return chunks
 }
 
-// Computed properties for document chunks
-const doc1Chunks = computed(() => {
-  if (!pairDetails.value) return []
-  return processDocumentContent(
-    pairDetails.value.doc1_content,
-    pairDetails.value.bert_sections || [],
-    true,
-  )
-})
+// Simplify document chunks retrieval functions
+// Replace getVisibleDoc1Chunks and getVisibleDoc2Chunks to just return the computed values
+const getVisibleDoc1Chunks = () => {
+  return doc1Chunks.value
+}
 
-const doc2Chunks = computed(() => {
-  if (!pairDetails.value) return []
-  return processDocumentContent(
-    pairDetails.value.doc2_content,
-    pairDetails.value.bert_sections || [],
-    false,
-  )
-})
+const getVisibleDoc2Chunks = () => {
+  return doc2Chunks.value
+}
 
 // Methods for highlight interactions
 const highlightPair = (sectionId) => {
@@ -524,7 +662,8 @@ const highlightPair = (sectionId) => {
     const allRelatedIds = new Set([sectionId])
 
     // Find all sections in document 1 that are related to the hovered section
-    doc1Chunks.value.forEach((chunk) => {
+    const visibleDoc1Chunks = getVisibleDoc1Chunks()
+    visibleDoc1Chunks.forEach((chunk) => {
       if (chunk.isHighlighted && chunk.relatedIds) {
         // If this chunk contains the section ID we're highlighting
         if (chunk.relatedIds.includes(sectionId)) {
@@ -535,7 +674,8 @@ const highlightPair = (sectionId) => {
     })
 
     // Find all sections in document 2 that are related to the hovered section
-    doc2Chunks.value.forEach((chunk) => {
+    const visibleDoc2Chunks = getVisibleDoc2Chunks()
+    visibleDoc2Chunks.forEach((chunk) => {
       if (chunk.isHighlighted && chunk.relatedIds) {
         // If this chunk contains the section ID we're highlighting
         if (chunk.relatedIds.includes(sectionId)) {
@@ -551,7 +691,7 @@ const highlightPair = (sectionId) => {
       prevSize = allRelatedIds.size
 
       // Check document 1 for new related sections
-      doc1Chunks.value.forEach((chunk) => {
+      visibleDoc1Chunks.forEach((chunk) => {
         if (chunk.isHighlighted && chunk.relatedIds) {
           // If any of this chunk's related IDs are in our set
           const hasRelatedId = chunk.relatedIds.some((id) => allRelatedIds.has(id))
@@ -563,7 +703,7 @@ const highlightPair = (sectionId) => {
       })
 
       // Check document 2 for new related sections
-      doc2Chunks.value.forEach((chunk) => {
+      visibleDoc2Chunks.forEach((chunk) => {
         if (chunk.isHighlighted && chunk.relatedIds) {
           // If any of this chunk's related IDs are in our set
           const hasRelatedId = chunk.relatedIds.some((id) => allRelatedIds.has(id))
@@ -597,7 +737,8 @@ const findAllRelatedSectionIds = (initialSectionId) => {
     prevSize = allRelatedIds.size
 
     // Check document 1 for related sections
-    doc1Chunks.value.forEach((chunk) => {
+    const visibleDoc1Chunks = getVisibleDoc1Chunks()
+    visibleDoc1Chunks.forEach((chunk) => {
       if (chunk.isHighlighted && chunk.relatedIds) {
         // If any of this chunk's related IDs are in our set
         const hasRelatedId = chunk.relatedIds.some((id) => allRelatedIds.has(id))
@@ -609,7 +750,8 @@ const findAllRelatedSectionIds = (initialSectionId) => {
     })
 
     // Check document 2 for related sections
-    doc2Chunks.value.forEach((chunk) => {
+    const visibleDoc2Chunks = getVisibleDoc2Chunks()
+    visibleDoc2Chunks.forEach((chunk) => {
       if (chunk.isHighlighted && chunk.relatedIds) {
         // If any of this chunk's related IDs are in our set
         const hasRelatedId = chunk.relatedIds.some((id) => allRelatedIds.has(id))
@@ -682,8 +824,9 @@ const collectSimilarityValues = (sectionIds) => {
   // If we still don't have values, as a last resort look in the chunks
   if (uniqueSimilarities.size === 0) {
     // Check in document 1
+    const visibleDoc1Chunks = getVisibleDoc1Chunks()
     for (const sectionId of sectionIds) {
-      const chunk = doc1Chunks.value.find((c) => c.isHighlighted && c.sectionId === sectionId)
+      const chunk = visibleDoc1Chunks.find((c) => c.isHighlighted && c.sectionId === sectionId)
 
       if (chunk && typeof chunk.similarity === 'number') {
         // Round to 1 decimal place for consistency
@@ -695,8 +838,9 @@ const collectSimilarityValues = (sectionIds) => {
     }
 
     // Check in document 2
+    const visibleDoc2Chunks = getVisibleDoc2Chunks()
     for (const sectionId of sectionIds) {
-      const chunk = doc2Chunks.value.find((c) => c.isHighlighted && c.sectionId === sectionId)
+      const chunk = visibleDoc2Chunks.find((c) => c.isHighlighted && c.sectionId === sectionId)
 
       if (chunk && typeof chunk.similarity === 'number') {
         // Round to 1 decimal place for consistency
@@ -804,7 +948,8 @@ const isActiveSection = (sectionId, activeIds) => {
   // Get all the related IDs for this section
   const getSectionRelatedIds = (id) => {
     // First check in document 1
-    const doc1Section = doc1Chunks.value.find(
+    const visibleDoc1Chunks = getVisibleDoc1Chunks()
+    const doc1Section = visibleDoc1Chunks.find(
       (chunk) =>
         chunk.isHighlighted &&
         (chunk.sectionId === id || (chunk.relatedIds && chunk.relatedIds.includes(id))),
@@ -814,7 +959,8 @@ const isActiveSection = (sectionId, activeIds) => {
     }
 
     // Then check in document 2
-    const doc2Section = doc2Chunks.value.find(
+    const visibleDoc2Chunks = getVisibleDoc2Chunks()
+    const doc2Section = visibleDoc2Chunks.find(
       (chunk) =>
         chunk.isHighlighted &&
         (chunk.sectionId === id || (chunk.relatedIds && chunk.relatedIds.includes(id))),
@@ -870,9 +1016,42 @@ const isActiveSection = (sectionId, activeIds) => {
   return thisRelatedIds.includes(activeIds)
 }
 
+// Helper function to calculate total text length - keep for informational purposes
+const getTotalTextLength = () => {
+  if (!pairDetails.value) return 0
+  return (
+    (pairDetails.value.doc1_content?.length || 0) + (pairDetails.value.doc2_content?.length || 0)
+  )
+}
+
+// Keep the toggle for highlights only
+const toggleHighlightsOnly = () => {
+  showHighlightsOnly.value = !showHighlightsOnly.value
+}
+
+// Modify onMounted to remove truncation and pagination logic
 onMounted(() => {
   fetchPairDetails()
+    .then(() => {
+      if (pairDetails.value) {
+        console.log('Đã nhận dữ liệu:', pairDetails.value)
+        // Remove any logic related to truncation or pagination
+      } else {
+        console.error('Không nhận được dữ liệu từ API')
+      }
+    })
+    .catch((err) => {
+      console.error('Lỗi khi xử lý dữ liệu:', err)
+    })
 })
+
+// Function to retry the comparison
+const retryComparison = () => {
+  loading.value = true
+  setTimeout(() => {
+    fetchPairDetails()
+  }, 500)
+}
 </script>
 
 <style scoped>
@@ -967,4 +1146,26 @@ onMounted(() => {
     text-align: left;
   }
 }
+
+/* Add styles for context text in highlights-only mode */
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+/* Remove the fade effect for truncated content
+.prose p:last-child {
+  position: relative;
+}
+
+.prose p.truncated:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(transparent, white);
+  pointer-events: none;
+}
+*/
 </style>

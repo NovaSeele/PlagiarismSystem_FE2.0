@@ -53,3 +53,20 @@ export const checkDocumentsByNames = async (filenames) => {
     throw error
   }
 }
+
+/**
+ * Add documents to the plagiarism check queue
+ * @param {Array<string>} documentIds - Array of document IDs to add to the queue
+ * @returns {Promise<Object>} - Response confirming documents were added to queue
+ */
+export const queueDocumentsForPlagiarismCheck = async (documentIds) => {
+  try {
+    const response = await api.post('/plagiarism/queue-documents', {
+      ids: documentIds,
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error adding documents to plagiarism queue:', error)
+    throw error
+  }
+}

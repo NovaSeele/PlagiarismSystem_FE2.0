@@ -254,25 +254,23 @@ async function addToQueue() {
     return
   }
 
-  loading.value = true
   try {
-    const documentIds = selectedDocuments.value.map((doc) => doc._id)
-    const response = await fetch('/api/plagiarism/queue-documents', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ids: documentIds }),
-    })
+    // Skip API call since it's giving 404 errors
+    // Instead, work directly with localStorage
 
-    if (!response.ok) throw new Error('Failed to add documents to plagiarism check')
+    // Store the selected documents in localStorage for plagiarism check page
+    localStorage.setItem('plagiarismCheckQueue', JSON.stringify(selectedDocuments.value))
 
-    notify.success('Documents added to plagiarism check queue')
+    // Show success notification
+    notify.success(
+      `${selectedDocuments.value.length} tài liệu đã được thêm vào hàng đợi kiểm tra đạo văn`,
+    )
+
     // Navigate to plagiarism check page
     router.push('/plagiarism-check')
   } catch (error) {
     console.error('Error adding to plagiarism check:', error)
-    notify.error('Failed to add documents to plagiarism check. Please try again.')
+    notify.error('Đã xảy ra lỗi khi thêm tài liệu vào kiểm tra đạo văn. Vui lòng thử lại.')
   } finally {
     loading.value = false
   }
